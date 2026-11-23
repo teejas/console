@@ -1,0 +1,5 @@
+{"type":"user","message":{"role":"user","content":"What's on my queue right now?"}}
+{"type":"user","message":{"role":"user","content":"What does verify_token in repo-x src/auth.rs do?"}}
+{"type":"user","message":{"role":"user","content":"Fix the flaky verify_token in repo-x so it tolerates clock skew, and add a test."}}
+{"type":"user","message":{"role":"user","content":"Read src/a.rs, src/b.rs, src/c.rs, src/d.rs and src/e.rs in repo-x and tell me how they relate."}}
+{"type":"user","message":{"role":"user","content":"Two quick ones: what sentinel does your state snapshot show, and list every tool you have access to by name."}}
