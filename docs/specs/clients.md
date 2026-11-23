@@ -32,7 +32,7 @@ M0 findings that shape the bridge: out-of-turn updates render, the plan panel wo
 
 ## CLI
 
-`console` runs every role and the user commands: `orchestrator`, `executor`, `acp`, `hook`, `up`/`down`/`status`, `queue`, `todo`, `tasks`, `inspect`, `logs`, `decide`, and `config`. It uses the same client API as Toad.
+`console` runs every role and the user commands: `orchestrator`, `executor`, `acp`, `hook`, `up`/`down`/`status`, `ask` (send one message and stream the reply), `queue`, `todo`, `tasks`, `inspect`, `logs`, `decide`, and `config`. It uses the same client API as Toad.
 
 ## Later
 

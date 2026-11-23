@@ -24,6 +24,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/healthz", get(|| async { "ok" }))
         .route("/client", get(client_ws))
         .route("/executor", get(crate::hub::executor_ws))
+        .merge(crate::mcp::router(app.clone()))
         .with_state(app)
 }
 

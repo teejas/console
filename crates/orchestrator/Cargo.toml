@@ -14,11 +14,14 @@ workspace = true
 anyhow.workspace = true
 axum.workspace = true
 chrono.workspace = true
+console-agent.workspace = true
+console-cc-host.workspace = true
 console-config.workspace = true
 console-proto.workspace = true
 console-queue.workspace = true
 console-store.workspace = true
 futures.workspace = true
+rmcp = { workspace = true, features = ["server", "macros", "schemars", "transport-streamable-http-server"] }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

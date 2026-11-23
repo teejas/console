@@ -381,6 +381,16 @@ impl Executor {
                 };
                 capture_patch(&ws.root, &base_rev).await
             }
+            // A stand-in worker for tests and demos: finishes after a moment.
+            Op::StartWorker { harness, brief, .. } if harness == "fake" => {
+                tokio::select! {
+                    () = cancel.cancelled() => CommandOutcome::Cancelled,
+                    () = tokio::time::sleep(Duration::from_millis(100)) => CommandOutcome::Succeeded {
+                        summary: Some(format!("Fake worker finished: {}", brief.lines().next().unwrap_or(""))),
+                        patch: None,
+                    },
+                }
+            }
             Op::StartWorker { .. } | Op::WorkerPrompt { .. } => CommandOutcome::Failed {
                 error: "workers are not supported by this executor yet".into(),
             },

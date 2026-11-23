@@ -23,7 +23,7 @@ Model access goes through Claude Code only; there is no direct API client.
 Each message you send is a **turn**, not a task.
 
 1. The service persists the message and writes it to Claude Code. **One prompt in flight:** the next is sent only after the `result` message, because Claude Code merges queued prompts into one turn.
-2. A `UserPromptSubmit` hook (`console hook prompt-submit`) injects current state as additional context: top of the queue, active tasks, items waiting on you, and the time.
+2. A `UserPromptSubmit` hook (`console hook prompt-submit`) injects current state as additional context: top of the queue, active tasks, items waiting on you, tasks finished in the last day, workspaces, and the time. The hooks reach the service over the client API using `CONSOLE_HOOK_URL` and `CONSOLE_HOOK_TOKEN`, which the service sets for the agent process (they are excluded from `CONSOLE_*` config overrides). A hook that can't reach the service fails open.
 3. Streamed text and tool calls are translated to client events, persisted, and pushed to clients.
 4. When the turn ends, the service writes a turn record.
 
@@ -38,6 +38,9 @@ All tools come from the service's MCP server and appear to the agent as `mcp__co
 | Workspace (through the executor) | `ws_list`, `ws_read_file`, `ws_search`, `git_status`, `git_log`, `git_diff`, `git_show`, `run_readonly` | Read-only by construction. `run_readonly` runs only allowlisted commands (for example `gh pr view`), with a timeout and an output cap. |
 | Queue | `queue_list`, `todo_add`, `todo_update`, `todo_move`, `todo_drop`, `proposal_resolve` | Fields you set change only through proposals ([queue](priority-queue.md)) |
 | Work | `delegate_task`, `task_status`, `task_message`, `task_cancel`, `decision_answer` | `delegate_task` is the only way work gets a worker |
+| Context | `workspaces` | Registered workspaces and whether their executor is online |
+
+The tools are served by the Orchestrator itself over streamable HTTP at `/mcp`, behind the local token.
 
 ## Delegation policy
 

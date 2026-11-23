@@ -46,6 +46,11 @@ enum Command {
     Down,
     /// Show daemon, executor, and workspace status.
     Status,
+    /// Send one message to the Orchestrator and print its reply.
+    Ask {
+        #[arg(required = true, num_args = 1..)]
+        message: Vec<String>,
+    },
     /// Show the shared priority queue.
     Queue(queue_cmd::QueueArgs),
     /// Add, edit, move, or finish todos, and answer the Orchestrator's proposals.
@@ -85,6 +90,31 @@ fn not_yet(command: &str, milestone: &str) -> ExitCode {
     ExitCode::from(2)
 }
 
+/// Relays a Claude Code hook payload to the Orchestrator and prints its answer. Fails open:
+/// if the service can't be reached, the hook prints nothing and the call proceeds.
+async fn run_hook(config: &Config, method: &str) {
+    use std::io::Read as _;
+    let mut input = String::new();
+    let _ = std::io::stdin().read_to_string(&mut input);
+    let payload: serde_json::Value = serde_json::from_str(&input).unwrap_or_default();
+    let url = std::env::var("CONSOLE_HOOK_URL").unwrap_or_else(|_| config.client_url());
+    let token = match std::env::var("CONSOLE_HOOK_TOKEN") {
+        Ok(t) => t,
+        Err(_) => match config.token() {
+            Ok(t) => t,
+            Err(_) => return,
+        },
+    };
+    let Ok((client, _)) = console_client::Client::connect(&url, &token).await else {
+        return;
+    };
+    if let Ok(out) = client.call_raw(method, payload).await
+        && out.as_object().is_some_and(|o| !o.is_empty())
+    {
+        println!("{out}");
+    }
+}
+
 fn runtime() -> std::io::Result<tokio::runtime::Runtime> {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -109,7 +139,12 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
         return Ok(ExitCode::SUCCESS);
     }
 
-    let config = Config::load(cli.config.as_deref())?;
+    // Hooks must never fail on a config problem: they fall back to defaults and env.
+    let config = match (Config::load(cli.config.as_deref()), &cli.command) {
+        (Ok(c), _) => c,
+        (Err(_), Command::Hook(_)) => Config::default(),
+        (Err(e), _) => return Err(e.into()),
+    };
     telemetry::init(&config.log);
     tracing::debug!(data_dir = %config.data_dir.display(), "config loaded");
 
@@ -128,8 +163,19 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             ExitCode::SUCCESS
         }
         Command::Acp { .. } => not_yet("acp", "M6"),
-        Command::Hook(_) => not_yet("hook", "M5"),
+        Command::Hook(hook) => {
+            let method = match hook {
+                HookCommand::PromptSubmit => console_orchestrator::HOOK_PROMPT_SUBMIT,
+                HookCommand::PreTool => console_orchestrator::HOOK_PRE_TOOL,
+            };
+            runtime()?.block_on(run_hook(&config, method));
+            ExitCode::SUCCESS
+        }
         Command::Up | Command::Down | Command::Status => not_yet("up/down/status", "M8"),
+        Command::Ask { message } => {
+            runtime()?.block_on(queue_cmd::ask(&config, &message.join(" ")))?;
+            ExitCode::SUCCESS
+        }
         Command::Queue(args) => {
             runtime()?.block_on(queue_cmd::queue(&config, args))?;
             ExitCode::SUCCESS

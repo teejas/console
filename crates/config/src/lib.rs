@@ -23,6 +23,10 @@ use serde::{Deserialize, Serialize};
 /// Environment variable that points at an alternative config file.
 pub const CONFIG_ENV: &str = "CONSOLE_CONFIG";
 
+/// `CONSOLE_*` variables that are not config overrides (lowercased, without the prefix):
+/// the config file path, and what the Orchestrator passes to its hook commands.
+pub const RESERVED_ENV: &[&str] = &["config", "hook_url", "hook_token"];
+
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("could not determine the home directory; set `data_dir` explicitly")]
@@ -219,7 +223,7 @@ impl Config {
     fn figment(path: &Path) -> Figment {
         Figment::from(Serialized::defaults(Self::default()))
             .merge(Toml::file(path))
-            .merge(Env::prefixed("CONSOLE_").ignore(&["config"]).split("__"))
+            .merge(Env::prefixed("CONSOLE_").ignore(RESERVED_ENV).split("__"))
     }
 
     /// The client API endpoint (`console acp` and the CLI connect here).
@@ -334,6 +338,16 @@ mod tests {
             );
             let c = Config::load(None).unwrap();
             assert_eq!(c.log.filter, "debug");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn hook_variables_are_not_config() {
+        Jail::expect_with(|jail| {
+            jail.set_env("CONSOLE_HOOK_URL", "ws://x");
+            jail.set_env("CONSOLE_HOOK_TOKEN", "t");
+            assert!(Config::load(Some(&jail.directory().join("none.toml"))).is_ok());
             Ok(())
         });
     }

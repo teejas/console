@@ -2,12 +2,15 @@
 //!
 //! See `docs/specs/topology.md`.
 
+pub mod agent_runner;
 pub mod api;
 pub mod engine;
 pub mod hub;
+pub mod mcp;
 pub mod queue_ops;
 pub mod server;
 pub mod task_machine;
+pub mod work;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,6 +26,11 @@ use tokio::net::TcpListener;
 
 use crate::server::Conn;
 
+/// Internal method the `console hook prompt-submit` command calls.
+pub const HOOK_PROMPT_SUBMIT: &str = "hook.prompt_submit";
+/// Internal method the `console hook pre-tool` command calls.
+pub const HOOK_PRE_TOOL: &str = "hook.pre_tool";
+
 /// How many queue items attach snapshots and plan mirrors show.
 pub const QUEUE_TOP: usize = 8;
 
@@ -34,6 +42,7 @@ pub struct App {
     pub token: String,
     pub orchestrator_session: SessionId,
     pub hub: hub::Hub,
+    pub agent: agent_runner::AgentRunner,
 }
 
 impl App {
@@ -49,6 +58,7 @@ impl App {
             token,
             orchestrator_session,
             hub: hub::Hub::default(),
+            agent: agent_runner::AgentRunner::default(),
         }))
     }
 
@@ -92,6 +102,29 @@ impl App {
                 )
             }
             WorkspaceList::NAME => api::result::<WorkspaceList>(self.workspace_views().await?),
+            console_proto::api::TurnSubmit::NAME => {
+                let p = api::params::<console_proto::api::TurnSubmit>(p)?;
+                api::result::<console_proto::api::TurnSubmit>(
+                    self.submit_turn(&p.text, &p.idempotency_key).await?,
+                )
+            }
+            console_proto::api::TurnOverrideMethod::NAME => {
+                let p = api::params::<console_proto::api::TurnOverrideMethod>(p)?;
+                self.override_turn(p.turn_id, p.mode).await?;
+                api::result::<console_proto::api::TurnOverrideMethod>(console_proto::api::Empty {})
+            }
+            HOOK_PROMPT_SUBMIT => Ok(console_agent::prompt_submit_output(
+                &work::snapshot(self).await,
+            )),
+            HOOK_PRE_TOOL => {
+                let input: console_agent::HookInput = serde_json::from_value(p).unwrap_or_default();
+                Ok(
+                    match work::pre_tool(self, input.tool_name.as_deref().unwrap_or("")).await {
+                        Some(reason) => console_agent::pre_tool_deny(&reason),
+                        None => Value::Object(serde_json::Map::new()),
+                    },
+                )
+            }
             other => Err(api::ApiError(RpcError::new(
                 RpcError::METHOD_NOT_FOUND,
                 format!("unknown method {other}"),
@@ -130,6 +163,93 @@ impl App {
         Ok(q)
     }
 
+    /// Records a user message as a turn and queues it for the agent.
+    pub async fn submit_turn(
+        &self,
+        text: &str,
+        key: &str,
+    ) -> api::ApiResult<console_proto::api::TurnSubmitResult> {
+        if text.trim().is_empty() {
+            return Err(api::ApiError(RpcError::invalid_params("empty message")));
+        }
+        let sid = self.orchestrator_session;
+        let (turn, created) = self
+            .store
+            .write(async |tx| tx.insert_turn(sid, key, text).await)
+            .await?;
+        if created {
+            self.agent.enqueue(turn.id);
+        }
+        Ok(console_proto::api::TurnSubmitResult {
+            turn_id: turn.id,
+            duplicate: !created,
+        })
+    }
+
+    /// `/delegate` or `/inline` on a turn: recorded, then acted on with a follow-up turn.
+    pub async fn override_turn(
+        &self,
+        turn: console_proto::TurnId,
+        mode: console_proto::domain::TurnOverride,
+    ) -> api::ApiResult<()> {
+        self.store
+            .write(async |tx| tx.set_turn_override(turn, mode).await)
+            .await?;
+        let text = match mode {
+            console_proto::domain::TurnOverride::Delegate => {
+                "/delegate — The user wants the previous request handed to a worker. Call delegate_task now with a complete brief."
+            }
+            console_proto::domain::TurnOverride::Inline => {
+                "/inline — The user wants the previous request answered here, without delegating. Answer within your inline tools."
+            }
+        };
+        self.submit_turn(text, &format!("override:{turn}:{mode:?}"))
+            .await
+            .map(|_| ())
+    }
+
+    /// Steers a running worker (arrives with workers in M7).
+    pub async fn message_worker(
+        &self,
+        task: console_proto::TaskId,
+        _text: &str,
+    ) -> Result<String, String> {
+        Err(format!(
+            "task {task}: messaging workers isn't supported yet"
+        ))
+    }
+
+    /// Resolves a decision with an option or a free-text answer and routes it.
+    pub async fn answer_decision(
+        &self,
+        id: console_proto::DecisionId,
+        option_id: Option<String>,
+        answer: Option<String>,
+    ) -> Result<String, String> {
+        let d = self
+            .store
+            .decision(id)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or("no such decision")?;
+        let option = match (&option_id, d.options.is_empty()) {
+            (Some(o), false) if d.options.iter().any(|x| &x.id == o) => o.clone(),
+            (_, false) => {
+                let ids: Vec<&str> = d.options.iter().map(|o| o.id.as_str()).collect();
+                return Err(format!("choose one of: {}", ids.join(", ")));
+            }
+            (_, true) => "answer".to_owned(),
+        };
+        let ans = answer.clone();
+        let record = self
+            .store
+            .write(async |tx| tx.resolve_decision(id, &option, ans.as_deref()).await)
+            .await
+            .map_err(|e| e.to_string())?;
+        self.on_decision_resolved(&record, answer.as_deref()).await;
+        Ok(format!("Answered: {}", answer.unwrap_or(option)))
+    }
+
     /// A cancel was recorded; tell the executor running the task.
     pub(crate) async fn on_cancel_requested(&self, task: &TaskRecord) {
         if let Err(e) = self.hub.cancel(self, task.id).await {
@@ -143,7 +263,16 @@ impl App {
     }
 
     /// A command reached a final status.
-    pub(crate) async fn after_command_settled(&self, _cmd: &CommandRecord, _status: CommandStatus) {
+    pub(crate) async fn after_command_settled(&self, _cmd: &CommandRecord, status: CommandStatus) {
+        if matches!(
+            status,
+            CommandStatus::Succeeded
+                | CommandStatus::Failed
+                | CommandStatus::Cancelled
+                | CommandStatus::Interrupted
+        ) {
+            work::start_held(self).await;
+        }
     }
 
     /// A decision was answered; route the answer to the worker.
@@ -168,6 +297,7 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
     let listener = TcpListener::bind(config.orchestrator.listen).await?;
     tracing::info!(addr = %listener.local_addr()?, db = %db_path(&config).display(), "orchestrator listening");
     let app = App::new(config, store, token).await?;
+    agent_runner::start(&app);
     tokio::select! {
         r = server::serve(app, listener) => r?,
         _ = tokio::signal::ctrl_c() => tracing::info!("shutting down"),

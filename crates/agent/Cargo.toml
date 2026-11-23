@@ -11,3 +11,6 @@ publish = false
 workspace = true
 
 [dependencies]
+schemars = "1"
+serde.workspace = true
+serde_json.workspace = true

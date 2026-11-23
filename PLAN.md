@@ -19,12 +19,12 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Proposals for fields you own; `expected_version` on edits
   - [x] `queue.*` and `todo.*` API; `console queue` and `console todo`
 - [x] **Decide: Orchestrator isolation** — share your Claude Code login
-- [ ] **M5 Orchestrator agent** (~5 days)
-  - [ ] `cc-host`: Claude Code over `stream-json`, one prompt in flight, `--resume` after restart
-  - [ ] MCP tools: workspace (read-only), queue, work
-  - [ ] Hooks: per-turn state injection; the inline budget with forced delegation
-  - [ ] `delegate_task` with briefs, against a fake worker; turn records
-  - [ ] Headline-first answers in the system prompt
+- [x] **M5 Orchestrator agent** (~5 days)
+  - [x] `cc-host`: Claude Code over `stream-json`, one prompt in flight, `--resume` after restart
+  - [x] MCP tools: workspace (read-only), queue, work
+  - [x] Hooks: per-turn state injection; the inline budget with forced delegation
+  - [x] `delegate_task` with briefs, against a fake worker; turn records
+  - [x] Headline-first answers in the system prompt
 - [ ] **M6 Toad bridge** (~3 days) — usable daily from here
   - [ ] `console acp`: the Orchestrator conversation, with the queue as plan entries
   - [ ] Worker sessions (`--task`) and `/attach`

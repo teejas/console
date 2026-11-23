@@ -335,3 +335,66 @@ async fn resolve(client: &Client, n: usize, accept: bool) -> anyhow::Result<()> 
     print_todo(if accept { "Accepted" } else { "Rejected" }, &t);
     Ok(())
 }
+
+/// Sends one message and prints the Orchestrator's reply as it streams.
+pub async fn ask(config: &Config, message: &str) -> anyhow::Result<()> {
+    use console_proto::api::{
+        AttachParams, EventsSubscribe, SessionAttach, SessionTarget, SubscribeParams, TurnSubmit,
+        TurnSubmitParams,
+    };
+    use console_proto::event::EventBody;
+    use std::io::Write as _;
+    let token = config.token().context("reading the local token")?;
+    let (client, mut events) = Client::connect(&config.client_url(), &token)
+        .await
+        .context("is the Orchestrator running? (`console orchestrator`)")?;
+    let attached = client
+        .call::<SessionAttach>(AttachParams {
+            target: SessionTarget::Orchestrator,
+            recent: 0,
+        })
+        .await?;
+    client
+        .call::<EventsSubscribe>(SubscribeParams {
+            session_id: attached.session_id,
+            after: attached.cursor,
+        })
+        .await?;
+    let key = format!("ask-{}", console_proto::TurnId::generate());
+    let turn = client
+        .call::<TurnSubmit>(TurnSubmitParams {
+            text: message.to_owned(),
+            idempotency_key: key,
+        })
+        .await?
+        .turn_id;
+    let mut out = std::io::stdout();
+    while let Some(n) = events.recv().await {
+        match n.event.body {
+            EventBody::AgentText { turn_id, text } if turn_id == Some(turn) => {
+                let _ = write!(out, "{text}");
+                let _ = out.flush();
+            }
+            EventBody::ToolCallStarted { turn_id, title, .. } if turn_id == Some(turn) => {
+                eprintln!("\n  ↳ {title}");
+            }
+            EventBody::TurnEnded {
+                turn_id,
+                decision,
+                tool_calls,
+                wall_ms,
+                ..
+            } if turn_id == turn => {
+                println!();
+                eprintln!(
+                    "  ({} · {tool_calls} tool calls · {:.1}s)",
+                    enum_str(&decision),
+                    wall_ms as f64 / 1000.0
+                );
+                break;
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}

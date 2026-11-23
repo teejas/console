@@ -218,6 +218,20 @@ impl Store {
         Ok(tasks)
     }
 
+    /// Queued tasks that were never dispatched (held back by concurrency limits), oldest first.
+    pub async fn undispatched_tasks(&self) -> Result<Vec<TaskRecord>> {
+        sqlx::query(
+            "SELECT * FROM tasks t WHERE t.state = 'queued'
+               AND NOT EXISTS (SELECT 1 FROM commands c WHERE c.task_id = t.id)
+             ORDER BY t.created_at",
+        )
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(row_to_task)
+        .collect()
+    }
+
     /// Non-terminal tasks targeting a workspace.
     pub async fn active_tasks_in(&self, workspace_id: WorkspaceId) -> Result<Vec<TaskRecord>> {
         let rows = sqlx::query("SELECT * FROM tasks WHERE workspace_id = ?1")
