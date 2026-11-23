@@ -611,15 +611,18 @@ dependencies = [
 name = "console"
 version = "0.1.0"
 dependencies = [
+ "agent-client-protocol",
  "anyhow",
  "assert_cmd",
  "chrono",
  "clap",
+ "console-acp-bridge",
  "console-client",
  "console-config",
  "console-executor",
  "console-orchestrator",
  "console-proto",
+ "console-store",
  "predicates",
  "serde",
  "serde_json",
@@ -643,6 +646,16 @@ dependencies = [
 [[package]]
 name = "console-acp-bridge"
 version = "0.1.0"
+dependencies = [
+ "agent-client-protocol",
+ "anyhow",
+ "chrono",
+ "console-client",
+ "console-proto",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "console-acp-host"

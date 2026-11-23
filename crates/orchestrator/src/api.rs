@@ -266,10 +266,14 @@ async fn respond(app: &Arc<App>, p: DecisionRespondParams) -> ApiResult<Empty> {
             p.option_id
         ))));
     }
+    let answer = p.answer.clone();
     let record = app
         .store
-        .write(async |tx| tx.resolve_decision(p.decision_id, &p.option_id, None).await)
+        .write(async |tx| {
+            tx.resolve_decision(p.decision_id, &p.option_id, answer.as_deref())
+                .await
+        })
         .await?;
-    app.on_decision_resolved(&record, None).await;
+    app.on_decision_resolved(&record, p.answer.as_deref()).await;
     Ok(Empty {})
 }

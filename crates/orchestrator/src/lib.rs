@@ -113,6 +113,15 @@ impl App {
                 self.override_turn(p.turn_id, p.mode).await?;
                 api::result::<console_proto::api::TurnOverrideMethod>(console_proto::api::Empty {})
             }
+            console_proto::api::TaskPatch::NAME => {
+                let p = api::params::<console_proto::api::TaskPatch>(p)?;
+                let task = self.store.task(p.task_id).await?;
+                let patch = self.store.latest_artifact(p.task_id, "patch").await?;
+                api::result::<console_proto::api::TaskPatch>(console_proto::api::TaskPatchResult {
+                    patch: patch.map(|a| a.content),
+                    summary: task.and_then(|t| t.summary),
+                })
+            }
             HOOK_PROMPT_SUBMIT => Ok(console_agent::prompt_submit_output(
                 &work::snapshot(self).await,
             )),

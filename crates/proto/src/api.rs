@@ -178,6 +178,18 @@ pub struct DecisionRespondParams {
     /// Rejected if the task is no longer in this state (the decision went stale).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_state: Option<TaskState>,
+    /// A free-text answer, for worker questions (`option_id` is then `answer`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub answer: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TaskPatchResult {
+    /// The latest captured diff, if the worker changed anything.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patch: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
 }
 
 // ---- Queue ----
@@ -350,6 +362,7 @@ method!(
     TodoView
 );
 method!(WorkspaceList, "workspace.list", Empty, Vec<WorkspaceView>);
+method!(TaskPatch, "task.patch", TaskGetParams, TaskPatchResult);
 
 /// Every method name, for routing tables and docs.
 pub const METHOD_NAMES: &[&str] = &[
@@ -369,4 +382,5 @@ pub const METHOD_NAMES: &[&str] = &[
     ProposalList::NAME,
     ProposalResolve::NAME,
     WorkspaceList::NAME,
+    TaskPatch::NAME,
 ];

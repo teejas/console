@@ -25,10 +25,10 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Hooks: per-turn state injection; the inline budget with forced delegation
   - [x] `delegate_task` with briefs, against a fake worker; turn records
   - [x] Headline-first answers in the system prompt
-- [ ] **M6 Toad bridge** (~3 days) — usable daily from here
-  - [ ] `console acp`: the Orchestrator conversation, with the queue as plan entries
-  - [ ] Worker sessions (`--task`) and `/attach`
-  - [ ] Slash commands
+- [x] **M6 Toad bridge** (~3 days) — usable daily from here
+  - [x] `console acp`: the Orchestrator conversation, with the queue as plan entries
+  - [x] Worker sessions (`--task`) and `/attach`
+  - [x] Slash commands
 - [x] **Decide: worker permission policy** — inherit your Claude Code and Codex settings
 - [ ] **M7 Workers** (~6 days)
   - [ ] Codex ACP spike: MCP passthrough, permission requests, cancel, auth

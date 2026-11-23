@@ -26,7 +26,9 @@ Toad talks ACP v1 to `console acp`, which bridges to the client API.
 - **Default session:** the Orchestrator conversation. Text streams as message chunks; inline tool calls appear as collapsed tool calls; a delegation appears as a tool call titled like "Delegated → T-123: Fix flaky auth test (repo-x)".
 - **Queue:** the top N items appear as ACP plan entries, so Toad's plan panel shows the queue.
 - **Worker sessions:** `console acp --task <id>` replays and streams a worker's session and sends your prompts to it. `/attach <task>` launches it in a separate Toad instance.
-- **Slash commands:** `/queue`, `/next`, `/why`, `/add`, `/proposals`, `/tasks`, `/attach`, `/delegate`, `/inline`, `/decisions`, `/diff`.
+- **Slash commands:** `/queue`, `/next`, `/why <n>`, `/add <title>`, `/done <n>`, `/proposals`, `/accept <n>`, `/reject <n>`, `/tasks`, `/decisions`, `/answer [n] <option or text>`, `/diff <task>`, `/cancel <task>`, `/attach <task>`, `/delegate`, `/inline`. They run through the client API without a model turn.
+- **Notices:** task finished, failed, cancelled, outcome unknown, waiting for its executor; decisions and proposals that need you; an executor going offline. Each starts its own paragraph.
+- **Plan updates** are sent only when the queue's top changes, because Toad also draws each plan inline in the transcript.
 
 M0 findings that shape the bridge: out-of-turn updates render, the plan panel works, and replay during `session/new` renders. Consecutive chunks concatenate, so the bridge adds separators. Slash commands need Enter twice (the first picks the completion).
 

@@ -299,6 +299,7 @@ async fn decisions_resolve_once() {
             decision_id: did,
             option_id: "maybe".into(),
             expected_state: None,
+            answer: None,
         })
         .await
         .unwrap_err();
@@ -315,6 +316,7 @@ async fn decisions_resolve_once() {
             decision_id: did,
             option_id: "allow".into(),
             expected_state: None,
+            answer: None,
         })
         .await
         .unwrap();
@@ -323,6 +325,7 @@ async fn decisions_resolve_once() {
             decision_id: did,
             option_id: "deny".into(),
             expected_state: None,
+            answer: None,
         })
         .await
         .unwrap_err();

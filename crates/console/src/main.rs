@@ -162,7 +162,11 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             runtime()?.block_on(console_executor::run(config))?;
             ExitCode::SUCCESS
         }
-        Command::Acp { .. } => not_yet("acp", "M6"),
+        Command::Acp { task } => {
+            let token = config.token()?;
+            runtime()?.block_on(console_acp_bridge::run(&config.client_url(), &token, task))?;
+            ExitCode::SUCCESS
+        }
         Command::Hook(hook) => {
             let method = match hook {
                 HookCommand::PromptSubmit => console_orchestrator::HOOK_PROMPT_SUBMIT,

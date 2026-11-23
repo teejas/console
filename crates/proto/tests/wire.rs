@@ -304,7 +304,7 @@ fn client_api_params_and_results() {
         "task.get": { "params": TaskGetParams { task_id: task() }, "result": task_view },
         "task.list": TaskListParams::default(),
         "task.cancel": { "params": TaskCancelParams { task_id: task() }, "result": TaskCancelResult { state: TaskState::CancelRequested } },
-        "decision.respond": DecisionRespondParams { decision_id: decision(), option_id: "allow_once".into(), expected_state: Some(TaskState::Running) },
+        "decision.respond": DecisionRespondParams { decision_id: decision(), option_id: "allow_once".into(), expected_state: Some(TaskState::Running), answer: None },
         "queue.list": QueueListParams::default(),
         "todo.add": todo_add,
         "todo.move": todo_move,
