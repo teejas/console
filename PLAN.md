@@ -14,10 +14,10 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Command journal, `Duplicate` on redelivery, reconcile on reconnect
   - [x] Read ops: bounded, with the `run_readonly` allowlist
   - [x] Test: kill the executor mid-command → `OutcomeUnknown`, never re-run
-- [ ] **M4 Queue** (~3 days)
-  - [ ] Bands, in-band score, manual rank, `why` (property tests)
-  - [ ] Proposals for fields you own; `expected_version` on edits
-  - [ ] `queue.*` and `todo.*` API; `console queue` and `console todo`
+- [x] **M4 Queue** (~3 days)
+  - [x] Bands, in-band score, manual rank, `why` (property tests)
+  - [x] Proposals for fields you own; `expected_version` on edits
+  - [x] `queue.*` and `todo.*` API; `console queue` and `console todo`
 - [x] **Decide: Orchestrator isolation** — share your Claude Code login
 - [ ] **M5 Orchestrator agent** (~5 days)
   - [ ] `cc-host`: Claude Code over `stream-json`, one prompt in flight, `--resume` after restart

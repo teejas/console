@@ -2,6 +2,7 @@
 //! for the user's commands. Subcommands land milestone by milestone; ones that aren't
 //! built yet say which milestone delivers them and exit with status 2.
 
+mod queue_cmd;
 mod telemetry;
 
 use std::{path::PathBuf, process::ExitCode};
@@ -46,9 +47,10 @@ enum Command {
     /// Show daemon, executor, and workspace status.
     Status,
     /// Show the shared priority queue.
-    Queue,
-    /// Add, edit, move, or finish todos.
-    Todo,
+    Queue(queue_cmd::QueueArgs),
+    /// Add, edit, move, or finish todos, and answer the Orchestrator's proposals.
+    #[command(subcommand)]
+    Todo(queue_cmd::TodoCommand),
     /// List tasks.
     Tasks,
     /// Explain a task or turn: attempts, executor, waits, delegation decision, spend.
@@ -128,7 +130,14 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
         Command::Acp { .. } => not_yet("acp", "M6"),
         Command::Hook(_) => not_yet("hook", "M5"),
         Command::Up | Command::Down | Command::Status => not_yet("up/down/status", "M8"),
-        Command::Queue | Command::Todo => not_yet("queue/todo", "M4"),
+        Command::Queue(args) => {
+            runtime()?.block_on(queue_cmd::queue(&config, args))?;
+            ExitCode::SUCCESS
+        }
+        Command::Todo(cmd) => {
+            runtime()?.block_on(queue_cmd::todo(&config, cmd))?;
+            ExitCode::SUCCESS
+        }
         Command::Tasks | Command::Decide { .. } => not_yet("tasks/decide", "M7"),
         Command::Inspect { .. } | Command::Logs { .. } => not_yet("inspect/logs", "M8"),
     })

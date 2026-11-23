@@ -14,5 +14,9 @@ expression: METHOD_NAMES
   "decision.respond",
   "queue.list",
   "todo.add",
-  "todo.move"
+  "todo.move",
+  "todo.update",
+  "proposal.list",
+  "proposal.resolve",
+  "workspace.list"
 ]

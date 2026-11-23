@@ -16,6 +16,7 @@ axum.workspace = true
 chrono.workspace = true
 console-config.workspace = true
 console-proto.workspace = true
+console-queue.workspace = true
 console-store.workspace = true
 futures.workspace = true
 serde.workspace = true

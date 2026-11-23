@@ -5,6 +5,7 @@
 pub mod api;
 pub mod engine;
 pub mod hub;
+pub mod queue_ops;
 pub mod server;
 pub mod task_machine;
 
@@ -21,6 +22,9 @@ use serde_json::Value;
 use tokio::net::TcpListener;
 
 use crate::server::Conn;
+
+/// How many queue items attach snapshots and plan mirrors show.
+pub const QUEUE_TOP: usize = 8;
 
 /// Shared service state.
 #[derive(Debug)]
@@ -48,22 +52,82 @@ impl App {
         }))
     }
 
-    /// Methods added by later milestones.
+    /// Queue, workspace, and later-milestone methods.
     pub(crate) async fn dispatch_more(
         self: &Arc<Self>,
         _conn: &Conn,
         method: &str,
-        _params: Value,
+        p: Value,
     ) -> api::ApiResult<Value> {
-        Err(api::ApiError(RpcError::new(
-            RpcError::METHOD_NOT_FOUND,
-            format!("unknown method {method}"),
-        )))
+        use console_proto::api::{
+            Method as _, ProposalList, ProposalResolve, QueueList, TodoAdd, TodoMove, TodoUpdate,
+            WorkspaceList,
+        };
+        use console_queue::Actor;
+        match method {
+            QueueList::NAME => {
+                let p = api::params::<QueueList>(p)?;
+                api::result::<QueueList>(queue_ops::list(self, p.include_done).await?)
+            }
+            TodoAdd::NAME => {
+                let p = api::params::<TodoAdd>(p)?;
+                api::result::<TodoAdd>(queue_ops::add(self, p, Actor::User).await?)
+            }
+            TodoUpdate::NAME => {
+                let p = api::params::<TodoUpdate>(p)?;
+                api::result::<TodoUpdate>(queue_ops::update(self, p, Actor::User, "").await?)
+            }
+            TodoMove::NAME => {
+                let p = api::params::<TodoMove>(p)?;
+                api::result::<TodoMove>(
+                    queue_ops::move_todo(self, p.todo_id, p.before, p.after, p.expected_version)
+                        .await?,
+                )
+            }
+            ProposalList::NAME => api::result::<ProposalList>(queue_ops::proposals(self).await?),
+            ProposalResolve::NAME => {
+                let p = api::params::<ProposalResolve>(p)?;
+                api::result::<ProposalResolve>(
+                    queue_ops::resolve(self, p.proposal_id, p.accept).await?,
+                )
+            }
+            WorkspaceList::NAME => api::result::<WorkspaceList>(self.workspace_views().await?),
+            other => Err(api::ApiError(RpcError::new(
+                RpcError::METHOD_NOT_FOUND,
+                format!("unknown method {other}"),
+            ))),
+        }
+    }
+
+    pub(crate) async fn workspace_views(
+        &self,
+    ) -> api::ApiResult<Vec<console_proto::api::WorkspaceView>> {
+        let executors = self.store.executors().await?;
+        Ok(self
+            .store
+            .workspaces()
+            .await?
+            .into_iter()
+            .map(|w| {
+                let exec = executors.iter().find(|e| e.id == w.executor_id);
+                console_proto::api::WorkspaceView {
+                    id: w.id,
+                    name: w.name,
+                    executor_id: w.executor_id,
+                    executor_name: exec.map(|e| e.name.clone()).unwrap_or_default(),
+                    online: exec.is_some_and(|e| e.online),
+                    head_rev: w.head_rev,
+                    dirty: w.dirty,
+                }
+            })
+            .collect())
     }
 
     /// The top of the queue, for attach snapshots.
     pub(crate) async fn queue_top(&self) -> api::ApiResult<Vec<TodoView>> {
-        Ok(Vec::new())
+        let mut q = queue_ops::list(self, false).await?;
+        q.truncate(QUEUE_TOP);
+        Ok(q)
     }
 
     /// A cancel was recorded; tell the executor running the task.

@@ -2,9 +2,8 @@
 //! keeps the linked todo's status in step.
 
 use console_proto::TaskId;
-use console_proto::domain::{Band, BlockedReason, TaskState, TodoStatus};
-use console_proto::event::EventBody;
-use console_store::{EventKeys, Store, StoreError, TaskRecord, WriteTx};
+use console_proto::domain::{BlockedReason, TaskState, TodoStatus};
+use console_store::{Store, StoreError, TaskRecord, WriteTx};
 
 use crate::task_machine::{self, Illegal, Input, Status};
 
@@ -95,15 +94,6 @@ async fn sync_todo(tx: &mut WriteTx, task: &TaskRecord) -> Result<(), StoreError
     }
     todo.status = status;
     let todo = tx.update_todo(&todo).await?;
-    tx.append(
-        EventKeys::todo(todo.id).with_task(task.id),
-        EventBody::TodoChanged {
-            title: todo.title.clone(),
-            band: Band::from_scores(todo.importance, todo.urgency),
-            status: todo.status,
-            version: todo.version,
-        },
-    )
-    .await?;
+    crate::queue_ops::changed(tx, &todo).await?;
     Ok(())
 }

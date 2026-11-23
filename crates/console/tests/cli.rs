@@ -64,9 +64,9 @@ fn config_path_honours_env() {
 fn unbuilt_commands_name_their_milestone() {
     let dir = tempfile::tempdir().unwrap();
     console()
-        .arg("queue")
+        .arg("tasks")
         .env("CONSOLE_CONFIG", dir.path().join("none.toml"))
         .assert()
         .code(2)
-        .stderr(predicate::str::contains("M4"));
+        .stderr(predicate::str::contains("M7"));
 }

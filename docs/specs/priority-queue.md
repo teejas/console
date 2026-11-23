@@ -28,7 +28,7 @@ The todo list you and the Orchestrator both work from. Summary in [DESIGN.md](..
 
    Urgent ranks above important so time-sensitive items clear first (confirmed November 22, 2026).
 2. **Score within the band** from urgency, importance, items it unblocks, age, and a penalty for being blocked.
-3. **Manual placement** (`manual_rank`) overrides the score within a band and sticks.
+3. **Manual placement** (`manual_rank`) overrides the score within a band and sticks. Positions and scores share one 0–100 scale. Moving an item pins every item in that band at its current position, so the whole order you saw holds; new items still land by score. Moves across bands are refused: change importance or urgency instead.
 4. **`waiting_on_user` items** are always listed first.
 5. **`why`:** every item carries a one-line explanation of its position.
 

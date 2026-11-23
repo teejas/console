@@ -10,7 +10,8 @@ use crate::domain::{
     Band, BlockedReason, DelegationDecision, DisclosureLevel, TaskState, TodoStatus,
 };
 use crate::ids::{
-    DecisionId, DigestId, EventSeq, ExecutorId, SessionId, TaskId, TodoId, TurnId, WorkspaceId,
+    DecisionId, DigestId, EventSeq, ExecutorId, ProposalId, SessionId, TaskId, TodoId, TurnId,
+    WorkspaceId,
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -103,5 +104,17 @@ pub enum EventBody {
     ExecutorStatus {
         executor_id: ExecutorId,
         online: bool,
+    },
+    /// The Orchestrator proposed a change to a field you own. The envelope carries the todo.
+    ProposalOpened {
+        proposal_id: ProposalId,
+        field: String,
+        value: serde_json::Value,
+        rationale: String,
+    },
+    /// A proposal was accepted, rejected, or expired.
+    ProposalClosed {
+        proposal_id: ProposalId,
+        status: String,
     },
 }

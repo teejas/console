@@ -13,7 +13,9 @@ use crate::domain::{
     TurnOverride,
 };
 use crate::event::{DecisionOption, Event};
-use crate::ids::{DecisionId, EventSeq, SessionId, TaskId, TodoId, TurnId, WorkspaceId};
+use crate::ids::{
+    DecisionId, EventSeq, ExecutorId, ProposalId, SessionId, TaskId, TodoId, TurnId, WorkspaceId,
+};
 
 /// Bumped on any incompatible change to the client API.
 pub const API_VERSION: u32 = 1;
@@ -234,6 +236,68 @@ pub struct TodoMoveParams {
     pub expected_version: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TodoUpdateParams {
+    pub todo_id: TodoId,
+    pub expected_version: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<TodoKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<TodoOwner>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<TodoStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub importance: Option<Score>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub urgency: Option<Score>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_at: Option<DateTime<Utc>>,
+    /// Remove the due date.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clear_due: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<WorkspaceId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProposalView {
+    pub id: ProposalId,
+    pub todo_id: TodoId,
+    pub todo_title: String,
+    pub field: String,
+    pub value: serde_json::Value,
+    pub rationale: String,
+    pub expires_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TodoUpdateResult {
+    pub todo: TodoView,
+    /// Changes to fields you own that became proposals instead (Orchestrator edits only).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub proposals: Vec<ProposalView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProposalResolveParams {
+    pub proposal_id: ProposalId,
+    pub accept: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceView {
+    pub id: WorkspaceId,
+    pub name: String,
+    pub executor_id: ExecutorId,
+    pub executor_name: String,
+    pub online: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_rev: Option<String>,
+    pub dirty: bool,
+}
+
 method!(SessionAttach, "session.attach", AttachParams, AttachResult);
 method!(
     EventsSubscribe,
@@ -272,6 +336,20 @@ method!(
 method!(QueueList, "queue.list", QueueListParams, Vec<TodoView>);
 method!(TodoAdd, "todo.add", TodoAddParams, TodoView);
 method!(TodoMove, "todo.move", TodoMoveParams, TodoView);
+method!(
+    TodoUpdate,
+    "todo.update",
+    TodoUpdateParams,
+    TodoUpdateResult
+);
+method!(ProposalList, "proposal.list", Empty, Vec<ProposalView>);
+method!(
+    ProposalResolve,
+    "proposal.resolve",
+    ProposalResolveParams,
+    TodoView
+);
+method!(WorkspaceList, "workspace.list", Empty, Vec<WorkspaceView>);
 
 /// Every method name, for routing tables and docs.
 pub const METHOD_NAMES: &[&str] = &[
@@ -287,4 +365,8 @@ pub const METHOD_NAMES: &[&str] = &[
     QueueList::NAME,
     TodoAdd::NAME,
     TodoMove::NAME,
+    TodoUpdate::NAME,
+    ProposalList::NAME,
+    ProposalResolve::NAME,
+    WorkspaceList::NAME,
 ];
