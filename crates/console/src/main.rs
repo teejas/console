@@ -1,7 +1,7 @@
 //! `console`: one binary for every role (Orchestrator, executor, ACP bridge, hooks) and
-//! for the user's commands. Subcommands land milestone by milestone; ones that aren't
-//! built yet say which milestone delivers them and exit with status 2.
+//! for the user's commands.
 
+mod ops;
 mod queue_cmd;
 mod telemetry;
 
@@ -40,12 +40,22 @@ enum Command {
     /// Claude Code hook entry points used by the Orchestrator agent.
     #[command(subcommand)]
     Hook(HookCommand),
-    /// Install and start the daemons.
-    Up,
-    /// Stop the daemons.
-    Down,
-    /// Show daemon, executor, and workspace status.
-    Status,
+    /// Install and start the Orchestrator and executor as launchd agents (start at login,
+    /// restart if they crash).
+    Up {
+        #[command(flatten)]
+        svc: ServiceArgs,
+    },
+    /// Stop both services and remove their launchd agents.
+    Down {
+        #[command(flatten)]
+        svc: ServiceArgs,
+    },
+    /// Show services, the Orchestrator, executors, and what's in flight.
+    Status {
+        #[command(flatten)]
+        svc: ServiceArgs,
+    },
     /// Send one message to the Orchestrator and print its reply.
     Ask {
         #[arg(required = true, num_args = 1..)]
@@ -62,10 +72,20 @@ enum Command {
         #[arg(long)]
         all: bool,
     },
-    /// Explain a task or turn: attempts, executor, waits, delegation decision, spend.
+    /// Explain a task, turn, or todo: attempts, waits, decisions, delegation, spend.
     Inspect { id: String },
-    /// Show a task's logs.
-    Logs { id: String },
+    /// Show a task's worker session.
+    Logs {
+        /// Task number from `console tasks`, or a unique ID suffix.
+        task: String,
+        /// Keep streaming until the task ends.
+        #[arg(short, long)]
+        follow: bool,
+    },
+    /// Retry a task whose outcome is unknown (starts a fresh attempt).
+    Retry { task: String },
+    /// Settle a task whose outcome is unknown: succeeded, failed, or cancelled.
+    Resolve { task: String, outcome: String },
     /// List pending decisions, or answer one: `console decide 1 allow` or `console decide 1 use Postgres`.
     Decide {
         /// Decision number from the list.
@@ -77,6 +97,16 @@ enum Command {
     /// Inspect configuration.
     #[command(subcommand)]
     Config(ConfigCommand),
+}
+
+#[derive(Debug, clap::Args)]
+struct ServiceArgs {
+    /// Where launchd agent files go (default ~/Library/LaunchAgents).
+    #[arg(long, hide = true)]
+    agents_dir: Option<PathBuf>,
+    /// Label prefix instead of com.console (for tests).
+    #[arg(long, hide = true)]
+    label_prefix: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -93,11 +123,6 @@ enum ConfigCommand {
     Show,
     /// Print the config file path that would be read.
     Path,
-}
-
-fn not_yet(command: &str, milestone: &str) -> ExitCode {
-    eprintln!("`console {command}` is not implemented yet (arrives in {milestone}).");
-    ExitCode::from(2)
 }
 
 /// Relays a Claude Code hook payload to the Orchestrator and prints its answer. Fails open:
@@ -185,7 +210,24 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             runtime()?.block_on(run_hook(&config, method));
             ExitCode::SUCCESS
         }
-        Command::Up | Command::Down | Command::Status => not_yet("up/down/status", "M8"),
+        Command::Up { svc } => {
+            let path = Config::file_path(cli.config.as_deref())?;
+            ops::up(
+                &config,
+                path.exists().then_some(path.as_path()),
+                svc.agents_dir,
+                svc.label_prefix.as_deref(),
+            )?;
+            ExitCode::SUCCESS
+        }
+        Command::Down { svc } => {
+            ops::down(svc.agents_dir, svc.label_prefix.as_deref())?;
+            ExitCode::SUCCESS
+        }
+        Command::Status { svc } => {
+            runtime()?.block_on(ops::status(&config, svc.label_prefix.as_deref()))?;
+            ExitCode::SUCCESS
+        }
         Command::Ask { message } => {
             runtime()?.block_on(queue_cmd::ask(&config, &message.join(" ")))?;
             ExitCode::SUCCESS
@@ -206,7 +248,22 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             runtime()?.block_on(queue_cmd::decide(&config, n, &answer.join(" ")))?;
             ExitCode::SUCCESS
         }
-        Command::Inspect { .. } | Command::Logs { .. } => not_yet("inspect/logs", "M8"),
+        Command::Inspect { id } => {
+            runtime()?.block_on(ops::inspect(&config, &id))?;
+            ExitCode::SUCCESS
+        }
+        Command::Logs { task, follow } => {
+            runtime()?.block_on(ops::logs(&config, &task, follow))?;
+            ExitCode::SUCCESS
+        }
+        Command::Retry { task } => {
+            runtime()?.block_on(ops::retry(&config, &task))?;
+            ExitCode::SUCCESS
+        }
+        Command::Resolve { task, outcome } => {
+            runtime()?.block_on(ops::resolve(&config, &task, &outcome))?;
+            ExitCode::SUCCESS
+        }
     })
 }
 

@@ -6,6 +6,7 @@ pub mod agent_runner;
 pub mod api;
 pub mod engine;
 pub mod hub;
+pub mod inspect;
 pub mod mcp;
 pub mod queue_ops;
 pub mod server;
@@ -120,6 +121,29 @@ impl App {
                     .await
                     .map_err(|e| api::ApiError(RpcError::rejected(e)))?;
                 api::result::<console_proto::api::WorkerPrompt>(console_proto::api::Empty {})
+            }
+            console_proto::api::TaskRetry::NAME => {
+                let p = api::params::<console_proto::api::TaskRetry>(p)?;
+                let t = work::retry(self, p.task_id)
+                    .await
+                    .map_err(|e| api::ApiError(RpcError::rejected(e)))?;
+                api::result::<console_proto::api::TaskRetry>(t.view())
+            }
+            console_proto::api::TaskResolve::NAME => {
+                let p = api::params::<console_proto::api::TaskResolve>(p)?;
+                let t = work::resolve(self, p.task_id, p.outcome)
+                    .await
+                    .map_err(|e| api::ApiError(RpcError::rejected(e)))?;
+                api::result::<console_proto::api::TaskResolve>(t.view())
+            }
+            console_proto::api::Inspect::NAME => {
+                let p = api::params::<console_proto::api::Inspect>(p)?;
+                let text = inspect::inspect(self, &p.id)
+                    .await
+                    .map_err(|e| api::ApiError(RpcError::not_found(e)))?;
+                api::result::<console_proto::api::Inspect>(console_proto::api::InspectResult {
+                    text,
+                })
             }
             console_proto::api::TaskPatch::NAME => {
                 let p = api::params::<console_proto::api::TaskPatch>(p)?;

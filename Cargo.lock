@@ -623,6 +623,7 @@ dependencies = [
  "console-orchestrator",
  "console-proto",
  "console-store",
+ "directories",
  "predicates",
  "serde",
  "serde_json",

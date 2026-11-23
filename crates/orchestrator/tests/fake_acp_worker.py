@@ -10,6 +10,7 @@ The brief (first prompt) selects a mode with a `MODE:<name>` marker:
   silent      end the turn without completing; on the next prompt, complete
   slow        keep running until cancelled
   followup    call `propose_followup`, then complete
+  slowonce    run until cancelled the first time (leaving a marker); complete on a retry
 """
 import json
 import os
@@ -82,8 +83,8 @@ def handle_prompt(rid, params):
     sid = params["sessionId"]
     text = "".join(b.get("text", "") for b in params["prompt"])
     if state["mode"] is None:
-        for m in ["complete", "ask", "permission", "silent", "slow", "followup"]:
-            if "MODE:" + m in text:
+        for m in ["complete", "ask", "permission", "silent", "slowonce", "followup", "slow"]:
+            if "MODE:" + m in text and state["mode"] is None:
                 state["mode"] = m
         first = True
     else:
@@ -116,6 +117,16 @@ def handle_prompt(rid, params):
     elif mode == "followup":
         tool("propose_followup", {"title": "Add more tests", "why": "coverage is thin"})
         tool("complete", {"summary": "Done, with a follow-up"})
+    elif mode == "slowonce":
+        marker = os.path.join(state["cwd"], ".slowonce")
+        if os.path.exists(marker):
+            write("retried.txt", "ok\n")
+            tool("complete", {"summary": "Completed on retry"})
+        else:
+            write(".slowonce", "1\n")
+            while not state["cancelled"]:
+                time.sleep(0.05)
+            stop = "cancelled"
     elif mode == "slow":
         while not state["cancelled"]:
             time.sleep(0.05)

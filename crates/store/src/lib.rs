@@ -30,7 +30,7 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::{Mutex, broadcast};
 
 pub use artifacts::Artifact;
-pub use commands::CommandRecord;
+pub use commands::{AttemptRecord, CommandRecord};
 pub use decisions::{DecisionOrigin, DecisionRecord, DecisionStatus};
 pub use events::EventFilter;
 pub use sessions::SessionRecord;

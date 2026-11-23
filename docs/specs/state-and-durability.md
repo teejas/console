@@ -71,4 +71,6 @@ Queued ──attempt accepted──► Running ──result──► Succeeded /
 
 ## What durability does not cover
 
-The store can't know whether the outside world matches it. If a worker dies mid-`git push`, the task is correctly `OutcomeUnknown`; only reconciliation or you can settle it. Resuming an interrupted worker's session (rather than starting over) is a later improvement.
+The store can't know whether the outside world matches it. If a worker dies mid-`git push`, the task is correctly `OutcomeUnknown`; only reconciliation or you can settle it: `retry` starts a fresh attempt, and `resolve` records what actually happened (both also exist as Orchestrator tools, used only when you say so). Resuming an interrupted worker's session (rather than starting over) is a later improvement.
+
+Covered end to end by `crates/orchestrator/tests/recovery.rs`: the Orchestrator crashing while a worker waits on you, the executor crashing mid-worker, retry, and manual resolution.

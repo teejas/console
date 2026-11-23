@@ -2,6 +2,33 @@
 
 A persistent engineering assistant built around an Orchestrator: a conversational agent you stay in sync with through a shared priority queue, which delegates work to Executor agents running in your real development environment or cloud environments. The Orchestrator can be deployed to a cloud environment itself and supports Slack, chat, and voice interfaces.
 
+## Quick start
+
+Requirements: Rust 1.100, Claude Code (logged in), Toad, and the worker adapters:
+
+```sh
+npm install -g @agentclientprotocol/claude-agent-acp@0.109.1 @agentclientprotocol/codex-acp@2.9.0
+cargo install --path crates/console
+```
+
+Tell the executor which workspaces it owns in `~/.console/config.toml`:
+
+```toml
+[[executor.workspaces]]
+name = "console"
+path = "/path/to/console"
+```
+
+Start the Orchestrator and executor as launchd agents, then talk to the Orchestrator in Toad:
+
+```sh
+console up                      # start at login, restart on crash; `console down` to stop
+toad acp "console acp"          # the Orchestrator conversation (slash commands: /queue /tasks /decisions …)
+console status                  # services, workspaces, tasks, what's waiting on you
+```
+
+Everything is also available from the CLI: `console ask`, `console queue`, `console todo`, `console tasks`, `console decide`, `console logs -f`, `console inspect`, `console retry`, `console resolve`. See [DESIGN.md](DESIGN.md) for how it works and [PLAN.md](PLAN.md) for what's next.
+
 ## Directory structure
 
 ```

@@ -439,3 +439,41 @@ pub async fn pre_tool(app: &App, tool_name: &str) -> Option<String> {
         "Inline budget exhausted ({what} this turn). Stop looking things up: answer with what you have, or call delegate_task with your findings in the brief's context."
     ))
 }
+
+/// Starts a new attempt for a task whose outcome is unknown, after the user said so.
+pub async fn retry(app: &App, task_id: TaskId) -> Result<TaskRecord, String> {
+    let task = crate::engine::apply(
+        &app.store,
+        task_id,
+        crate::task_machine::Input::RetryAuthorized,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    if let Some(problem) = slot_problem(app, &task).await {
+        // Held like a fresh delegation: it has no new command yet, so it starts when a slot frees.
+        tracing::info!(task = %task.id, %problem, "retry held");
+        return Ok(task);
+    }
+    start_worker(app, &task).await?;
+    Ok(app.store.task(task_id).await.ok().flatten().unwrap_or(task))
+}
+
+/// Settles a task whose outcome is unknown, after the user checked what happened.
+pub async fn resolve(
+    app: &App,
+    task_id: TaskId,
+    outcome: console_proto::api::ResolvedOutcome,
+) -> Result<TaskRecord, String> {
+    use crate::task_machine::Input;
+    use console_proto::api::ResolvedOutcome as R;
+    let input = match outcome {
+        R::Succeeded => Input::ReconciledSucceeded,
+        R::Failed => Input::ReconciledFailed,
+        R::Cancelled => Input::ReconciledCancelled,
+    };
+    let task = crate::engine::apply(&app.store, task_id, input)
+        .await
+        .map_err(|e| e.to_string())?;
+    start_held(app).await;
+    Ok(task)
+}

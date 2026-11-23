@@ -2,7 +2,7 @@
 
 In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
 
-## MVP: local Orchestrator, local executor (Claude Code + Codex), shared queue
+## MVP: local Orchestrator, local executor (Claude Code + Codex), shared queue ✅
 
 - [x] **M2 Orchestrator core** (~4 days)
   - [x] SQLite store: migrations, one writer task, WAL with `synchronous=FULL`
@@ -36,10 +36,10 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Worker MCP tools: ask, report, complete, follow-up, blocked
   - [x] Questions and permissions surface as decisions in the conversation
   - [x] Patch capture; concurrency limits (1 per workspace, 2 total)
-- [ ] **M8 Daily-driver hardening** (~3 days)
-  - [ ] `console up`/`down`/`status` as launchd agents
-  - [ ] Restart recovery end to end; `OutcomeUnknown` resolution flow
-  - [ ] `console inspect`, `console logs`; end-to-end failure tests
+- [x] **M8 Daily-driver hardening** (~3 days)
+  - [x] `console up`/`down`/`status` as launchd agents
+  - [x] Restart recovery end to end; `OutcomeUnknown` resolution flow
+  - [x] `console inspect`, `console logs`; end-to-end failure tests
 
 ## Right after the MVP: prove it works (discuss first)
 

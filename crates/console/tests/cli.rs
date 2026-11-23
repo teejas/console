@@ -59,14 +59,3 @@ fn config_path_honours_env() {
         .success()
         .stdout("/tmp/elsewhere.toml\n");
 }
-
-#[test]
-fn unbuilt_commands_name_their_milestone() {
-    let dir = tempfile::tempdir().unwrap();
-    console()
-        .arg("up")
-        .env("CONSOLE_CONFIG", dir.path().join("none.toml"))
-        .assert()
-        .code(2)
-        .stderr(predicate::str::contains("M8"));
-}

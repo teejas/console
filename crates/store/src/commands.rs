@@ -139,7 +139,56 @@ impl WriteTx {
     }
 }
 
+/// One attempt at a task.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttemptRecord {
+    pub id: AttemptId,
+    pub executor_id: Option<ExecutorId>,
+    pub created_at: DateTime<Utc>,
+    pub ended_at: Option<DateTime<Utc>>,
+    pub outcome: Option<String>,
+}
+
 impl Store {
+    /// A task's attempts, oldest first.
+    pub async fn attempts_for(&self, task_id: TaskId) -> Result<Vec<AttemptRecord>> {
+        let rows = sqlx::query("SELECT * FROM attempts WHERE task_id = ?1 ORDER BY created_at")
+            .bind(task_id.to_string())
+            .fetch_all(self.pool())
+            .await?;
+        rows.iter()
+            .map(|r| {
+                Ok(AttemptRecord {
+                    id: id(&r.try_get::<String, _>("id")?)?,
+                    executor_id: opt_id(r.try_get("executor_id")?)?,
+                    created_at: parse_ts(&r.try_get::<String, _>("created_at")?)?,
+                    ended_at: r
+                        .try_get::<Option<String>, _>("ended_at")?
+                        .as_deref()
+                        .map(parse_ts)
+                        .transpose()?,
+                    outcome: r.try_get("outcome")?,
+                })
+            })
+            .collect()
+    }
+
+    /// Resolves a unique ID suffix (case-insensitive) across tasks, turns, and todos.
+    pub async fn find_by_suffix(&self, suffix: &str) -> Result<Vec<String>> {
+        let pattern = format!("%{}", suffix.trim().to_uppercase());
+        let rows = sqlx::query(
+            "SELECT id FROM tasks WHERE upper(id) LIKE ?1
+             UNION ALL SELECT id FROM turns WHERE upper(id) LIKE ?1
+             UNION ALL SELECT id FROM todos WHERE upper(id) LIKE ?1",
+        )
+        .bind(pattern)
+        .fetch_all(self.pool())
+        .await?;
+        rows.iter()
+            .map(|r| Ok(r.try_get::<String, _>("id")?))
+            .collect()
+    }
+
     pub async fn command(&self, cid: CommandId) -> Result<Option<CommandRecord>> {
         get_command(self.pool(), cid).await
     }

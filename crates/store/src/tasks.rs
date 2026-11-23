@@ -218,11 +218,13 @@ impl Store {
         Ok(tasks)
     }
 
-    /// Queued tasks that were never dispatched (held back by concurrency limits), oldest first.
+    /// Queued tasks with no live command: held back by concurrency limits, or a retry
+    /// waiting for a slot. Oldest first.
     pub async fn undispatched_tasks(&self) -> Result<Vec<TaskRecord>> {
         sqlx::query(
             "SELECT * FROM tasks t WHERE t.state = 'queued'
-               AND NOT EXISTS (SELECT 1 FROM commands c WHERE c.task_id = t.id)
+               AND NOT EXISTS (SELECT 1 FROM commands c WHERE c.task_id = t.id
+                               AND c.status IN ('pending', 'accepted', 'running'))
              ORDER BY t.created_at",
         )
         .fetch_all(self.pool())

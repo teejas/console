@@ -34,7 +34,18 @@ M0 findings that shape the bridge: out-of-turn updates render, the plan panel wo
 
 ## CLI
 
-`console` runs every role and the user commands: `orchestrator`, `executor`, `acp`, `hook`, `up`/`down`/`status`, `ask` (send one message and stream the reply), `queue`, `todo`, `tasks`, `inspect`, `logs`, `decide`, and `config`. It uses the same client API as Toad.
+`console` runs every role and the user commands, over the same client API as Toad:
+
+| Command | Does |
+|---|---|
+| `orchestrator`, `executor`, `acp`, `hook` | The services, the Toad bridge, and Claude Code's hook entry points |
+| `up`, `down`, `status` | Install, remove, and check the launchd agents; `status` also shows workspaces, tasks, and what's waiting on you |
+| `ask` | Send one message and stream the reply |
+| `queue`, `todo` | The shared queue |
+| `tasks`, `logs [-f]`, `inspect` | Delegated work: list, a worker's session, and a readable account of a task, turn, or todo |
+| `decide` | List and answer questions and permission requests |
+| `retry`, `resolve` | Settle a task whose outcome is unknown |
+| `config show`, `config path` | Inspect configuration |
 
 ## Later
 

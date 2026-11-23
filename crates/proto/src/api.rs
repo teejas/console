@@ -183,6 +183,32 @@ pub struct DecisionRespondParams {
     pub answer: Option<String>,
 }
 
+/// How an unknown outcome actually ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResolvedOutcome {
+    Succeeded,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TaskResolveParams {
+    pub task_id: TaskId,
+    pub outcome: ResolvedOutcome,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InspectParams {
+    /// A task, turn, or todo ID, or a unique suffix of one.
+    pub id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InspectResult {
+    pub text: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TaskPatchResult {
     /// The latest captured diff, if the worker changed anything.
@@ -363,6 +389,27 @@ method!(
 );
 method!(WorkspaceList, "workspace.list", Empty, Vec<WorkspaceView>);
 method!(TaskPatch, "task.patch", TaskGetParams, TaskPatchResult);
+method!(
+    /// Starts a new attempt for a task whose outcome is unknown.
+    TaskRetry,
+    "task.retry",
+    TaskGetParams,
+    TaskView
+);
+method!(
+    /// Settles a task whose outcome is unknown, after you checked what happened.
+    TaskResolve,
+    "task.resolve",
+    TaskResolveParams,
+    TaskView
+);
+method!(
+    /// A readable account of a task, turn, or todo: attempts, waits, decisions, spend.
+    Inspect,
+    "inspect",
+    InspectParams,
+    InspectResult
+);
 
 /// Every method name, for routing tables and docs.
 pub const METHOD_NAMES: &[&str] = &[
@@ -383,4 +430,7 @@ pub const METHOD_NAMES: &[&str] = &[
     ProposalResolve::NAME,
     WorkspaceList::NAME,
     TaskPatch::NAME,
+    TaskRetry::NAME,
+    TaskResolve::NAME,
+    Inspect::NAME,
 ];

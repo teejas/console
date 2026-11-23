@@ -168,6 +168,13 @@ pub struct TaskRef {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct TaskResolution {
+    pub task_id: String,
+    /// succeeded, failed, or cancelled.
+    pub outcome: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct TaskMessage {
     pub task_id: String,
     /// What to tell the worker: an answer, a correction, or new direction.

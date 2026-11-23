@@ -19,5 +19,8 @@ expression: METHOD_NAMES
   "proposal.list",
   "proposal.resolve",
   "workspace.list",
-  "task.patch"
+  "task.patch",
+  "task.retry",
+  "task.resolve",
+  "inspect"
 ]

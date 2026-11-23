@@ -171,6 +171,17 @@ impl Store {
         get_decision(self.pool(), did).await
     }
 
+    /// Every decision a task raised, oldest first.
+    pub async fn decisions_for(&self, task_id: TaskId) -> Result<Vec<DecisionRecord>> {
+        sqlx::query("SELECT * FROM decisions WHERE task_id = ?1 ORDER BY created_at")
+            .bind(task_id.to_string())
+            .fetch_all(self.pool())
+            .await?
+            .iter()
+            .map(row_to_decision)
+            .collect()
+    }
+
     pub async fn open_decisions(&self) -> Result<Vec<DecisionRecord>> {
         sqlx::query("SELECT * FROM decisions WHERE status = 'open' ORDER BY created_at")
             .fetch_all(self.pool())
