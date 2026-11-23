@@ -54,7 +54,7 @@ fn describe(update: &SessionUpdate) -> Option<String> {
             format!("cmds {} available", c.available_commands.len())
         }
         SessionUpdate::UsageUpdate(u) => format!("usage used={} size={}", u.used, u.size),
-        other => format!("{}", short(&format!("{other:?}"), 100)),
+        other => short(&format!("{other:?}"), 100).to_string(),
     })
 }
 

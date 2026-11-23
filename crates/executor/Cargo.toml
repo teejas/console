@@ -1,0 +1,13 @@
+[package]
+name = "console-executor"
+description = "The executor daemon: Orchestrator link, journal, workspaces, read-only ops, worker host (M3)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

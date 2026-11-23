@@ -42,12 +42,12 @@ fn main() -> Result<()> {
     std::fs::create_dir_all(&out)?;
 
     let (mut cols, mut rows) = (120u16, 40u16);
-    if let Some(first) = script.lines().next() {
-        if let Some(rest) = first.strip_prefix("size ") {
-            let mut it = rest.split_whitespace();
-            cols = it.next().unwrap().parse()?;
-            rows = it.next().unwrap().parse()?;
-        }
+    if let Some(first) = script.lines().next()
+        && let Some(rest) = first.strip_prefix("size ")
+    {
+        let mut it = rest.split_whitespace();
+        cols = it.next().unwrap().parse()?;
+        rows = it.next().unwrap().parse()?;
     }
 
     let pty = native_pty_system().openpty(PtySize {

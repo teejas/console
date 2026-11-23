@@ -1,0 +1,13 @@
+[package]
+name = "console-orchestrator"
+description = "The Orchestrator service: client API server, task engine, dispatcher, executor hub (M2)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

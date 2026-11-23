@@ -6,11 +6,27 @@ A persistent engineering assistant built around an Orchestrator: a conversationa
 
 ```
 .
+├── DESIGN.md                  # living architecture: each design choice and its purpose
+├── PLAN.md                    # implementation plan as a prioritized checklist
 ├── Cargo.toml                 # Rust workspace
-├── research/
-│   ├── industry-research.md   # landscape of existing agents, TUIs, and protocols
-│   ├── architecture-design.md # target architecture and accepted product decisions
-│   └── implementation-plan.md # v1 plan: milestones, contracts, risks
+├── rust-toolchain.toml        # pinned toolchain
+├── .github/workflows/ci.yml   # fmt, clippy (-D warnings), tests
+├── crates/
+│   ├── console/               # the binary: every role and user command
+│   ├── proto/                 # wire types: IDs, events, client API, executor link
+│   ├── config/                # layered config (defaults, TOML, CONSOLE_* env)
+│   ├── store/                 # SQLite store and event log (M2)
+│   ├── orchestrator/          # Orchestrator service (M2)
+│   ├── client/                # client for the Orchestrator API (M2)
+│   ├── executor/              # executor daemon (M3)
+│   ├── queue/                 # shared priority queue (M4)
+│   ├── cc-host/               # hosts the Orchestrator's Claude Code (M5)
+│   ├── agent/                 # Orchestrator agent: hooks, tools, briefs (M5)
+│   ├── acp-bridge/            # `console acp` bridge for Toad (M6)
+│   └── acp-host/              # hosts Claude Code and Codex workers over ACP (M7)
+├── docs/
+│   ├── specs/                 # in-depth design docs, one per area of DESIGN.md
+│   └── research/              # original inputs: industry research and architecture design
 └── spikes/                    # M0 prototypes that validated the reused components
     ├── README.md              # findings and resulting plan changes
     ├── acp-stub-agent/        # stub ACP agent for probing Toad

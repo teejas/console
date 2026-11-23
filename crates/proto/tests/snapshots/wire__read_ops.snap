@@ -1,0 +1,52 @@
+---
+source: crates/proto/tests/wire.rs
+expression: ops
+---
+[
+  {
+    "op": "list_dir",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "path": "src"
+  },
+  {
+    "op": "read_file",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "path": "src/auth.rs",
+    "max_bytes": 65536
+  },
+  {
+    "op": "search",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "pattern": "TODO",
+    "max_matches": 20
+  },
+  {
+    "op": "git_status",
+    "workspace_id": "ws_01KANAR9G00000000000000005"
+  },
+  {
+    "op": "git_log",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "max": 10
+  },
+  {
+    "op": "git_diff",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "rev_range": "main..HEAD"
+  },
+  {
+    "op": "git_show",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "rev": "3f2a91c"
+  },
+  {
+    "op": "run_readonly",
+    "workspace_id": "ws_01KANAR9G00000000000000005",
+    "argv": [
+      "gh",
+      "pr",
+      "view",
+      "42"
+    ]
+  }
+]

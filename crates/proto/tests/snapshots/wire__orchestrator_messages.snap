@@ -1,0 +1,101 @@
+---
+source: crates/proto/tests/wire.rs
+expression: msgs
+---
+[
+  {
+    "type": "welcome",
+    "epoch": 1,
+    "protocol": 1
+  },
+  {
+    "type": "reject",
+    "reason": "stale epoch"
+  },
+  {
+    "type": "dispatch",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "attempt_id": "att_01KANAR9G00000000000000007",
+    "epoch": 1,
+    "op": {
+      "op": "start_worker",
+      "task_id": "task_01KANAR9G00000000000000002",
+      "workspace_id": "ws_01KANAR9G00000000000000005",
+      "harness": "claude",
+      "brief": "# Fix flaky verify_token\n..."
+    }
+  },
+  {
+    "type": "dispatch",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "attempt_id": "att_01KANAR9G00000000000000007",
+    "epoch": 1,
+    "op": {
+      "op": "worker_prompt",
+      "task_id": "task_01KANAR9G00000000000000002",
+      "text": "Use the env var."
+    }
+  },
+  {
+    "type": "dispatch",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "attempt_id": "att_01KANAR9G00000000000000007",
+    "epoch": 1,
+    "op": {
+      "op": "exec",
+      "workspace_id": "ws_01KANAR9G00000000000000005",
+      "argv": [
+        "cargo",
+        "test"
+      ],
+      "timeout_ms": 600000
+    }
+  },
+  {
+    "type": "dispatch",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "attempt_id": "att_01KANAR9G00000000000000007",
+    "epoch": 1,
+    "op": {
+      "op": "capture_patch",
+      "workspace_id": "ws_01KANAR9G00000000000000005",
+      "base_rev": "3f2a91c"
+    }
+  },
+  {
+    "type": "cancel",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "epoch": 1
+  },
+  {
+    "type": "reconcile",
+    "command_ids": [
+      "cmd_01KANAR9G00000000000000006"
+    ]
+  },
+  {
+    "type": "read_op",
+    "request_id": "r-1",
+    "op": {
+      "op": "search",
+      "workspace_id": "ws_01KANAR9G00000000000000005",
+      "pattern": "verify_token",
+      "path_glob": "src/**",
+      "max_matches": 50
+    },
+    "deadline_ms": 5000
+  },
+  {
+    "type": "decision_response",
+    "decision_id": "dec_01KANAR9G00000000000000009",
+    "option_id": "allow_once"
+  },
+  {
+    "type": "mcp_result",
+    "call_id": "c-1",
+    "result": {
+      "answer": "env var"
+    },
+    "is_error": false
+  }
+]

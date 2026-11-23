@@ -1,0 +1,21 @@
+[package]
+name = "console-proto"
+description = "Wire types shared by every component: IDs, domain enums, events, the client API, and the executor link."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+ulid.workspace = true
+
+[dev-dependencies]
+insta.workspace = true

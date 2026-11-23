@@ -6,3 +6,6 @@ edition.workspace = true
 [dependencies]
 agent-client-protocol = { workspace = true, features = ["process"] }
 tokio = { workspace = true, features = ["full"] }
+
+# Throwaway M0 spike: opts out of workspace lints.
+[lints]

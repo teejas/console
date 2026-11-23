@@ -1,0 +1,13 @@
+[package]
+name = "console-agent"
+description = "The Orchestrator agent: system prompt, settings, hooks, MCP tool server, turn records, briefs (M5)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

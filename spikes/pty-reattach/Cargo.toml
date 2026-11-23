@@ -7,3 +7,6 @@ edition.workspace = true
 anyhow.workspace = true
 portable-pty = "0.9.0"
 vt100 = "0.18.1"
+
+# Throwaway M0 spike: opts out of workspace lints.
+[lints]

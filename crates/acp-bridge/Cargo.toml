@@ -1,0 +1,13 @@
+[package]
+name = "console-acp-bridge"
+description = "`console acp`: an ACP v1 agent on stdio that bridges Toad to the Orchestrator client API (M6)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

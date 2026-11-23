@@ -1,0 +1,18 @@
+---
+source: crates/proto/tests/wire.rs
+expression: METHOD_NAMES
+---
+[
+  "session.attach",
+  "events.subscribe",
+  "turn.submit",
+  "turn.override",
+  "worker.prompt",
+  "task.get",
+  "task.list",
+  "task.cancel",
+  "decision.respond",
+  "queue.list",
+  "todo.add",
+  "todo.move"
+]

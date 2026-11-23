@@ -1,0 +1,13 @@
+[package]
+name = "console-client"
+description = "Rust client for the Orchestrator's client API, shared by the bridge and the CLI (M2)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

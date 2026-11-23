@@ -1,0 +1,21 @@
+---
+source: crates/proto/tests/wire.rs
+expression: "json!({\n    \"session\": session(), \"turn\": turn(), \"todo\": todo(), \"task\": task(),\n    \"attempt\": attempt(), \"command\": command(), \"executor\": executor(),\n    \"workspace\": workspace(), \"decision\": decision(), \"artifact\":\n    ArtifactId::from_ulid(ulid(10)), \"digest\": DigestId::from_ulid(ulid(11)),\n    \"proposal\": ProposalId::from_ulid(ulid(12)), \"terminal\":\n    TerminalId::from_ulid(ulid(13)), \"seq\": EventSeq(42), \"epoch\":\n    AuthorityEpoch(2),\n})"
+---
+{
+  "artifact": "art_01KANAR9G0000000000000000A",
+  "attempt": "att_01KANAR9G00000000000000007",
+  "command": "cmd_01KANAR9G00000000000000006",
+  "decision": "dec_01KANAR9G00000000000000009",
+  "digest": "dig_01KANAR9G0000000000000000B",
+  "epoch": 2,
+  "executor": "exe_01KANAR9G00000000000000008",
+  "proposal": "prop_01KANAR9G0000000000000000C",
+  "seq": 42,
+  "session": "ses_01KANAR9G00000000000000001",
+  "task": "task_01KANAR9G00000000000000002",
+  "terminal": "term_01KANAR9G0000000000000000D",
+  "todo": "todo_01KANAR9G00000000000000003",
+  "turn": "turn_01KANAR9G00000000000000004",
+  "workspace": "ws_01KANAR9G00000000000000005"
+}

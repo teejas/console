@@ -1,0 +1,125 @@
+---
+source: crates/proto/tests/wire.rs
+expression: events
+---
+[
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "kind": "user_message",
+    "seq": 1,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "text": "fix the flaky auth test",
+    "turn_id": "turn_01KANAR9G00000000000000004"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "kind": "tool_call_started",
+    "seq": 2,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "title": "ws_read_file repo-x src/auth.rs",
+    "tool_call_id": "tc-1",
+    "turn_id": "turn_01KANAR9G00000000000000004"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "kind": "task_delegated",
+    "seq": 3,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "task_id": "task_01KANAR9G00000000000000002",
+    "title": "Fix flaky auth test",
+    "todo_id": "todo_01KANAR9G00000000000000003",
+    "workspace_id": "ws_01KANAR9G00000000000000005"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "blocked": "awaiting_input",
+    "from": "running",
+    "kind": "task_transition",
+    "seq": 4,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "task_id": "task_01KANAR9G00000000000000002",
+    "to": "running"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "kind": "tool_call_finished",
+    "ok": true,
+    "seq": 5,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "tool_call_id": "tc-1"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "kind": "agent_text",
+    "seq": 6,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "text": "Handing this to a worker.",
+    "turn_id": "turn_01KANAR9G00000000000000004"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "budget_hit": false,
+    "decision": "delegate",
+    "kind": "turn_ended",
+    "seq": 7,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "tool_calls": 2,
+    "turn_id": "turn_01KANAR9G00000000000000004",
+    "wall_ms": 4210
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "decision_id": "dec_01KANAR9G00000000000000009",
+    "kind": "decision_requested",
+    "options": [
+      {
+        "id": "allow_once",
+        "label": "Allow once"
+      },
+      {
+        "id": "reject",
+        "label": "Reject"
+      }
+    ],
+    "question": "Allow `cargo test -p auth`?",
+    "seq": 8,
+    "session_id": "ses_01KANAR9G00000000000000001"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "decision_id": "dec_01KANAR9G00000000000000009",
+    "kind": "decision_resolved",
+    "option_id": "allow_once",
+    "seq": 9,
+    "session_id": "ses_01KANAR9G00000000000000001"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "digest_id": "dig_01KANAR9G0000000000000000B",
+    "headline": "T-123: leeway added, tests pass; needs your call on config",
+    "kind": "digest_delivered",
+    "level": "l1",
+    "markdown": "- src/auth.rs (+38 -4)\n- 51 tests passed",
+    "needs_you": true,
+    "seq": 10,
+    "session_id": "ses_01KANAR9G00000000000000001"
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "band": "P0",
+    "kind": "todo_changed",
+    "seq": 11,
+    "session_id": "ses_01KANAR9G00000000000000001",
+    "status": "active",
+    "title": "Fix flaky auth test",
+    "version": 4
+  },
+  {
+    "at": "2026-11-22T19:30:00Z",
+    "executor_id": "exe_01KANAR9G00000000000000008",
+    "kind": "executor_status",
+    "online": false,
+    "seq": 12,
+    "session_id": "ses_01KANAR9G00000000000000001"
+  }
+]

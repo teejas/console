@@ -17,14 +17,13 @@ struct Orch;
 
 fn log(line: String) {
     eprintln!("[mcp-stub] {line}");
-    if let Ok(path) = std::env::var("MCP_LOG") {
-        if let Ok(mut f) = std::fs::OpenOptions::new()
+    if let Ok(path) = std::env::var("MCP_LOG")
+        && let Ok(mut f) = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(path)
-        {
-            let _ = writeln!(f, "{line}");
-        }
+    {
+        let _ = writeln!(f, "{line}");
     }
 }
 

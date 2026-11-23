@@ -74,14 +74,13 @@ impl State {
 
 fn log(msg: impl AsRef<str>) {
     eprintln!("[stub] {}", msg.as_ref());
-    if let Ok(path) = std::env::var("STUB_LOG") {
-        if let Ok(mut f) = std::fs::OpenOptions::new()
+    if let Ok(path) = std::env::var("STUB_LOG")
+        && let Ok(mut f) = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(path)
-        {
-            let _ = writeln!(f, "{}", msg.as_ref());
-        }
+    {
+        let _ = writeln!(f, "{}", msg.as_ref());
     }
 }
 

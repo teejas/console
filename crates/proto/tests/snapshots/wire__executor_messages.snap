@@ -1,0 +1,189 @@
+---
+source: crates/proto/tests/wire.rs
+expression: msgs
+---
+[
+  {
+    "type": "hello",
+    "executor_id": "exe_01KANAR9G00000000000000008",
+    "protocol": 1,
+    "max_epoch_seen": 1,
+    "capabilities": [
+      {
+        "capability": "shell"
+      },
+      {
+        "capability": "pty"
+      },
+      {
+        "capability": "git"
+      },
+      {
+        "capability": "worker",
+        "harness": "claude"
+      }
+    ],
+    "workspaces": [
+      {
+        "workspace_id": "ws_01KANAR9G00000000000000005",
+        "path": "/Users/me/src/repo-x",
+        "repo_remote": "git@github.com:me/repo-x.git",
+        "head_rev": "3f2a91c",
+        "dirty": true
+      }
+    ],
+    "journal": [
+      {
+        "command_id": "cmd_01KANAR9G00000000000000006",
+        "attempt_id": "att_01KANAR9G00000000000000007",
+        "status": "interrupted",
+        "updated_at": "2026-11-22T19:10:00Z"
+      }
+    ]
+  },
+  {
+    "type": "accepted",
+    "command_id": "cmd_01KANAR9G00000000000000006"
+  },
+  {
+    "type": "duplicate",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "status": "running"
+  },
+  {
+    "type": "progress",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "update": {
+      "update": "text",
+      "text": "Reading src/auth.rs"
+    }
+  },
+  {
+    "type": "progress",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "update": {
+      "update": "tool_call",
+      "tool_call_id": "toolu_1",
+      "title": "Write tests/auth_skew.rs",
+      "kind": "edit"
+    }
+  },
+  {
+    "type": "progress",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "update": {
+      "update": "tool_call_done",
+      "tool_call_id": "toolu_1",
+      "ok": true
+    }
+  },
+  {
+    "type": "progress",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "update": {
+      "update": "plan",
+      "entries": [
+        "Add leeway",
+        "Add tests"
+      ]
+    }
+  },
+  {
+    "type": "progress",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "update": {
+      "update": "usage",
+      "used": 68396,
+      "size": 1000000
+    }
+  },
+  {
+    "type": "result",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "outcome": {
+      "result": "succeeded",
+      "summary": "51 tests pass",
+      "artifacts": [
+        "art_01KANAR9G0000000000000000A"
+      ]
+    }
+  },
+  {
+    "type": "result",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "outcome": {
+      "result": "failed",
+      "error": "exit 101"
+    }
+  },
+  {
+    "type": "result",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "outcome": {
+      "result": "interrupted"
+    }
+  },
+  {
+    "type": "reconcile_report",
+    "entries": [
+      {
+        "command_id": "cmd_01KANAR9G00000000000000006",
+        "attempt_id": "att_01KANAR9G00000000000000007",
+        "status": "interrupted",
+        "updated_at": "2026-11-22T19:10:00Z"
+      }
+    ]
+  },
+  {
+    "type": "read_op_result",
+    "request_id": "r-1",
+    "result": {
+      "status": "ok",
+      "output": "fn verify_token",
+      "truncated": false
+    }
+  },
+  {
+    "type": "read_op_result",
+    "request_id": "r-2",
+    "result": {
+      "status": "denied",
+      "reason": "`rm` is not on the read-only allowlist"
+    }
+  },
+  {
+    "type": "decision_request",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "decision_id": "dec_01KANAR9G00000000000000009",
+    "question": "Allow `cargo test -p auth`?",
+    "options": [
+      {
+        "id": "allow_once",
+        "label": "Allow once"
+      },
+      {
+        "id": "reject",
+        "label": "Reject"
+      }
+    ]
+  },
+  {
+    "type": "mcp_call",
+    "call_id": "c-1",
+    "command_id": "cmd_01KANAR9G00000000000000006",
+    "tool": "ask_orchestrator",
+    "args": {
+      "question": "env var or code?"
+    }
+  },
+  {
+    "type": "terminal_opened",
+    "terminal_id": "term_01KANAR9G0000000000000000D",
+    "workspace_id": "ws_01KANAR9G00000000000000005"
+  },
+  {
+    "type": "terminal_closed",
+    "terminal_id": "term_01KANAR9G0000000000000000D",
+    "exit_code": 0
+  }
+]

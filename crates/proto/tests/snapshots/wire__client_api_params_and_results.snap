@@ -1,0 +1,145 @@
+---
+source: crates/proto/tests/wire.rs
+expression: "json!({\n    \"session.attach\":\n    {\n        \"params\":\n        [AttachParams { target: SessionTarget::Orchestrator, recent: 200 },\n        AttachParams\n        { target: SessionTarget::Task { task_id: task() }, recent: 50 },],\n        \"result\": attach,\n    }, \"events.subscribe\":\n    {\n        \"params\": SubscribeParams\n        { session_id: session(), after: EventSeq(41) }, \"result\":\n        SubscribeResult { subscription: \"sub-1\".into() },\n    }, \"turn.submit\":\n    {\n        \"params\": TurnSubmitParams\n        { text: \"what's on my queue?\".into(), idempotency_key: \"k-1\".into() },\n        \"result\": TurnSubmitResult { turn_id: turn(), duplicate: false },\n    }, \"turn.override\": TurnOverrideParams\n    { turn_id: turn(), mode: TurnOverride::Delegate }, \"worker.prompt\":\n    WorkerPromptParams\n    {\n        task_id: task(), text: \"use the env var\".into(), idempotency_key:\n        \"k-2\".into()\n    }, \"task.get\":\n    { \"params\": TaskGetParams { task_id: task() }, \"result\": task_view },\n    \"task.list\": TaskListParams::default(), \"task.cancel\":\n    {\n        \"params\": TaskCancelParams { task_id: task() }, \"result\":\n        TaskCancelResult { state: TaskState::CancelRequested }\n    }, \"decision.respond\": DecisionRespondParams\n    {\n        decision_id: decision(), option_id: \"allow_once\".into(),\n        expected_state: Some(TaskState::Running)\n    }, \"queue.list\": QueueListParams::default(), \"todo.add\": todo_add,\n    \"todo.move\": todo_move, \"empty\": Empty {},\n})"
+---
+{
+  "decision.respond": {
+    "decision_id": "dec_01KANAR9G00000000000000009",
+    "expected_state": "running",
+    "option_id": "allow_once"
+  },
+  "empty": {},
+  "events.subscribe": {
+    "params": {
+      "after": 41,
+      "session_id": "ses_01KANAR9G00000000000000001"
+    },
+    "result": {
+      "subscription": "sub-1"
+    }
+  },
+  "queue.list": {
+    "include_done": false
+  },
+  "session.attach": {
+    "params": [
+      {
+        "recent": 200,
+        "target": {
+          "type": "orchestrator"
+        }
+      },
+      {
+        "recent": 50,
+        "target": {
+          "task_id": "task_01KANAR9G00000000000000002",
+          "type": "task"
+        }
+      }
+    ],
+    "result": {
+      "cursor": 1,
+      "kind": "orchestrator",
+      "open_decisions": [
+        {
+          "id": "dec_01KANAR9G00000000000000009",
+          "options": [
+            {
+              "id": "allow_once",
+              "label": "Allow once"
+            },
+            {
+              "id": "reject",
+              "label": "Reject"
+            }
+          ],
+          "question": "Allow `cargo test -p auth`?",
+          "task_id": "task_01KANAR9G00000000000000002"
+        }
+      ],
+      "queue_top": [
+        {
+          "band": "P0",
+          "due_at": "2026-11-22T19:59:00Z",
+          "id": "todo_01KANAR9G00000000000000003",
+          "importance": 3,
+          "kind": "bugfix",
+          "owner": "orchestrator",
+          "status": "active",
+          "title": "Fix flaky auth test (repo-x)",
+          "urgency": 4,
+          "version": 3,
+          "why": "P0 · due today · unblocks 2"
+        }
+      ],
+      "recent_events": [
+        {
+          "at": "2026-11-22T19:30:00Z",
+          "kind": "user_message",
+          "seq": 1,
+          "session_id": "ses_01KANAR9G00000000000000001",
+          "text": "hi",
+          "turn_id": "turn_01KANAR9G00000000000000004"
+        }
+      ],
+      "session_id": "ses_01KANAR9G00000000000000001",
+      "title": "Orchestrator"
+    }
+  },
+  "task.cancel": {
+    "params": {
+      "task_id": "task_01KANAR9G00000000000000002"
+    },
+    "result": {
+      "state": "cancel_requested"
+    }
+  },
+  "task.get": {
+    "params": {
+      "task_id": "task_01KANAR9G00000000000000002"
+    },
+    "result": {
+      "blocked": "awaiting_decision",
+      "created_at": "2026-11-22T19:02:00Z",
+      "id": "task_01KANAR9G00000000000000002",
+      "state": "running",
+      "title": "Fix flaky auth test",
+      "todo_id": "todo_01KANAR9G00000000000000003",
+      "updated_at": "2026-11-22T19:04:00Z",
+      "workspace_id": "ws_01KANAR9G00000000000000005"
+    }
+  },
+  "task.list": {
+    "include_done": false
+  },
+  "todo.add": {
+    "importance": 1,
+    "kind": "chore",
+    "title": "Bump tokio",
+    "workspace_id": "ws_01KANAR9G00000000000000005"
+  },
+  "todo.move": {
+    "before": "todo_01KANAR9G0000000000000000Y",
+    "expected_version": 3,
+    "todo_id": "todo_01KANAR9G00000000000000003"
+  },
+  "turn.override": {
+    "mode": "delegate",
+    "turn_id": "turn_01KANAR9G00000000000000004"
+  },
+  "turn.submit": {
+    "params": {
+      "idempotency_key": "k-1",
+      "text": "what's on my queue?"
+    },
+    "result": {
+      "duplicate": false,
+      "turn_id": "turn_01KANAR9G00000000000000004"
+    }
+  },
+  "worker.prompt": {
+    "idempotency_key": "k-2",
+    "task_id": "task_01KANAR9G00000000000000002",
+    "text": "use the env var"
+  }
+}

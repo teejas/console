@@ -2,7 +2,8 @@
 
 **Date:** November 22, 2026  
 **Status:** Accepted product direction with proposed implementation mechanics. This is a design, not a claim that the system has been built.  
-**Companion:** [Industry research](industry-research.md)
+**Companion:** [Industry research](industry-research.md)  
+**Superseded for current decisions by** [DESIGN.md](../../DESIGN.md). Kept as the original design input.
 
 ## 1. Architecture in one paragraph
 

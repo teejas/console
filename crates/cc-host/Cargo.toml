@@ -1,0 +1,13 @@
+[package]
+name = "console-cc-host"
+description = "Hosts the Orchestrator's Claude Code CLI over stream-json, with one prompt in flight at a time (M5)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

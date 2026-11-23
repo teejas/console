@@ -1,0 +1,21 @@
+[package]
+name = "console-config"
+description = "Layered configuration (defaults, ~/.console/config.toml, CONSOLE_* env) for all components."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+directories.workspace = true
+figment.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+figment = { workspace = true, features = ["test"] }

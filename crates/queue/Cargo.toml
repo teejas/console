@@ -1,0 +1,13 @@
+[package]
+name = "console-queue"
+description = "Shared priority queue: bands, ranking, manual placement, proposals, field ownership. Pure logic, no IO (M4)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

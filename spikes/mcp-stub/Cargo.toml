@@ -9,3 +9,6 @@ rmcp = { workspace = true, features = ["server", "macros", "transport-io", "sche
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tokio = { workspace = true, features = ["full"] }
+
+# Throwaway M0 spike: opts out of workspace lints.
+[lints]
