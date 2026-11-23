@@ -209,8 +209,11 @@ impl EventKeys {
 
 // ---- value encoding helpers ----
 
+/// The current time at the store's precision (microseconds), so a value read back
+/// equals the value written on every platform.
 pub(crate) fn now() -> DateTime<Utc> {
-    Utc::now()
+    let t = Utc::now();
+    DateTime::from_timestamp_micros(t.timestamp_micros()).unwrap_or(t)
 }
 
 pub(crate) fn ts(t: DateTime<Utc>) -> String {
