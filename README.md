@@ -1,6 +1,6 @@
 # console
 
-A persistent engineering assistant built around an Orchestrator: a conversational agent you stay in sync with through a shared priority queue, which delegates substantial work to coding agents running in your real development environment. It's written in Rust and runs locally today, and the same Orchestrator is designed to move to the cloud while Toad stays your local chat client.
+A persistent engineering assistant built around an Orchestrator: a conversational agent you stay in sync with through a shared priority queue, which delegates work to Executor agents running in your real development environment or cloud environments. The Orchestrator can be deployed to a cloud environment itself and supports Slack, chat, and voice interfaces.
 
 ## Directory structure
 
