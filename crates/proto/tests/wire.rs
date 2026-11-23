@@ -344,6 +344,7 @@ fn executor_messages() {
             ],
             workspaces: vec![WorkspaceInfo {
                 workspace_id: workspace(),
+                name: "repo-x".into(),
                 path: "/Users/me/src/repo-x".into(),
                 repo_remote: Some("git@github.com:me/repo-x.git".into()),
                 head_rev: Some("3f2a91c".into()),

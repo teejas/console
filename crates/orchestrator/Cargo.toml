@@ -11,3 +11,20 @@ publish = false
 workspace = true
 
 [dependencies]
+anyhow.workspace = true
+axum.workspace = true
+chrono.workspace = true
+console-config.workspace = true
+console-proto.workspace = true
+console-store.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+console-client.workspace = true
+proptest.workspace = true
+tempfile.workspace = true

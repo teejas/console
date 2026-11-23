@@ -289,6 +289,8 @@ pub enum Capability {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceInfo {
     pub workspace_id: WorkspaceId,
+    /// A short human name, unique per executor (for example `console`).
+    pub name: String,
     /// Meaningful only on the owning executor.
     pub path: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

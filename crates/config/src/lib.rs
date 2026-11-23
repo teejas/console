@@ -8,6 +8,8 @@
 //!    (for example `CONSOLE_AGENT__EFFORT=high`).
 
 use std::{
+    collections::BTreeMap,
+    io::{self, Read as _},
     net::SocketAddr,
     path::{Path, PathBuf},
 };
@@ -56,10 +58,22 @@ pub struct ExecutorConfig {
     pub orchestrator_url: String,
     /// Human-readable executor name shown in the UI.
     pub name: String,
-    /// Command that starts an ACP worker (Claude Code's ACP adapter), pinned, no npx.
-    pub worker_command: Vec<String>,
+    /// Worker harnesses by name: the command that starts each ACP adapter (installed, no npx).
+    pub harnesses: BTreeMap<String, Vec<String>>,
+    /// The harness used when a delegation doesn't name one.
+    pub default_harness: String,
+    /// Workspaces this executor owns.
+    pub workspaces: Vec<WorkspaceConfig>,
     /// Commands the Orchestrator's `run_readonly` tool may run, by argv prefix.
     pub readonly_allowlist: Vec<Vec<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkspaceConfig {
+    /// Short name the Orchestrator and you use, for example `console`.
+    pub name: String,
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -134,7 +148,12 @@ impl Default for ExecutorConfig {
         Self {
             orchestrator_url: "ws://127.0.0.1:7600/executor".into(),
             name: "laptop".into(),
-            worker_command: vec!["claude-agent-acp".into()],
+            harnesses: BTreeMap::from([
+                ("claude".to_string(), vec!["claude-agent-acp".to_string()]),
+                ("codex".to_string(), vec!["codex-acp".to_string()]),
+            ]),
+            default_harness: "claude".into(),
+            workspaces: Vec::new(),
             readonly_allowlist: [
                 &["gh", "pr", "view"][..],
                 &["gh", "pr", "diff"],
@@ -203,10 +222,51 @@ impl Config {
             .merge(Env::prefixed("CONSOLE_").ignore(&["config"]).split("__"))
     }
 
+    /// The client API endpoint (`console acp` and the CLI connect here).
+    #[must_use]
+    pub fn client_url(&self) -> String {
+        format!("ws://{}/client", self.orchestrator.listen)
+    }
+
+    /// The shared local token, created with mode 0600 on first use.
+    pub fn token(&self) -> io::Result<String> {
+        let path = self.data_dir.join("token");
+        match std::fs::read_to_string(&path) {
+            Ok(t) if !t.trim().is_empty() => return Ok(t.trim().to_owned()),
+            Ok(_) => {}
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e),
+        }
+        std::fs::create_dir_all(&self.data_dir)?;
+        let mut bytes = [0_u8; 32];
+        std::fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+        let token: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+        write_private(&path, &token)?;
+        Ok(token)
+    }
+
     /// The configuration rendered as TOML, for `console config show`.
     pub fn to_toml(&self) -> String {
         toml::to_string_pretty(self).expect("config always serializes")
     }
+}
+
+#[cfg(unix)]
+fn write_private(path: &Path, contents: &str) -> io::Result<()> {
+    use std::io::Write as _;
+    use std::os::unix::fs::OpenOptionsExt as _;
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(path)?;
+    f.write_all(contents.as_bytes())
+}
+
+#[cfg(not(unix))]
+fn write_private(path: &Path, contents: &str) -> io::Result<()> {
+    std::fs::write(path, contents)
 }
 
 #[cfg(test)]
@@ -284,6 +344,48 @@ mod tests {
             jail.create_file("c.toml", "[agent]\nmodle = \"typo\"\n")?;
             let err = Config::load(Some(&jail.directory().join("c.toml"))).unwrap_err();
             assert!(err.to_string().contains("modle"), "{err}");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn token_is_created_once_and_private() {
+        let dir = tempfile::tempdir().unwrap();
+        let c = Config {
+            data_dir: dir.path().to_path_buf(),
+            ..Config::default()
+        };
+        let a = c.token().unwrap();
+        assert_eq!(a.len(), 64);
+        assert_eq!(c.token().unwrap(), a, "stable across calls");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            let mode = std::fs::metadata(dir.path().join("token"))
+                .unwrap()
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+    }
+
+    #[test]
+    fn workspaces_and_harnesses_from_toml() {
+        Jail::expect_with(|jail| {
+            jail.create_file(
+                "c.toml",
+                r#"
+                [executor]
+                default_harness = "codex"
+                [[executor.workspaces]]
+                name = "console"
+                path = "/src/console"
+                "#,
+            )?;
+            let c = Config::load(Some(&jail.directory().join("c.toml"))).unwrap();
+            assert_eq!(c.executor.workspaces[0].name, "console");
+            assert_eq!(c.executor.default_harness, "codex");
+            assert!(c.executor.harnesses.contains_key("claude"), "defaults kept");
             Ok(())
         });
     }

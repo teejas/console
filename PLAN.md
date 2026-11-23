@@ -4,11 +4,11 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
 
 ## MVP: local Orchestrator, local executor (Claude Code + Codex), shared queue
 
-- [ ] **M2 Orchestrator core** (~4 days)
-  - [ ] SQLite store: migrations, one writer task, WAL with `synchronous=FULL`
-  - [ ] Event log with the outbox rule and cursor replay
-  - [ ] Task state machine with compare-and-set transitions and property tests
-  - [ ] Client API over WebSocket: `session.attach`, `events.subscribe`, `task.*`, `decision.respond`
+- [x] **M2 Orchestrator core** (~4 days)
+  - [x] SQLite store: migrations, one writer task, WAL with `synchronous=FULL`
+  - [x] Event log with the outbox rule and cursor replay
+  - [x] Task state machine with compare-and-set transitions and property tests
+  - [x] Client API over WebSocket: `session.attach`, `events.subscribe`, `task.*`, `decision.respond`
 - [ ] **M3 Local executor** (~4 days)
   - [ ] Link handshake with a local token; workspace registry
   - [ ] Command journal, `Duplicate` on redelivery, reconcile on reconnect
@@ -40,6 +40,13 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [ ] `console up`/`down`/`status` as launchd agents
   - [ ] Restart recovery end to end; `OutcomeUnknown` resolution flow
   - [ ] `console inspect`, `console logs`; end-to-end failure tests
+
+## Right after the MVP: prove it works (discuss first)
+
+- [ ] Define and quantify "quality work", and how to show the product gets it done faster
+- [ ] Metrics to collect
+- [ ] Instrumenting the product
+- [ ] Verification framework (for example, simulations)
 
 ## Next: cloud executors
 

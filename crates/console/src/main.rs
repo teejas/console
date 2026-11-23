@@ -83,6 +83,12 @@ fn not_yet(command: &str, milestone: &str) -> ExitCode {
     ExitCode::from(2)
 }
 
+fn runtime() -> std::io::Result<tokio::runtime::Runtime> {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match run(cli) {
@@ -111,7 +117,10 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             ExitCode::SUCCESS
         }
         Command::Config(ConfigCommand::Path) => unreachable!("handled above"),
-        Command::Orchestrator => not_yet("orchestrator", "M2"),
+        Command::Orchestrator => {
+            runtime()?.block_on(console_orchestrator::run(config))?;
+            ExitCode::SUCCESS
+        }
         Command::Executor => not_yet("executor", "M3"),
         Command::Acp { .. } => not_yet("acp", "M6"),
         Command::Hook(_) => not_yet("hook", "M5"),

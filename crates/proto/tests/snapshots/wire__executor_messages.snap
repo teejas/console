@@ -26,6 +26,7 @@ expression: msgs
     "workspaces": [
       {
         "workspace_id": "ws_01KANAR9G00000000000000005",
+        "name": "repo-x",
         "path": "/Users/me/src/repo-x",
         "repo_remote": "git@github.com:me/repo-x.git",
         "head_rev": "3f2a91c",

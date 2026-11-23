@@ -5,6 +5,7 @@
 //! - [`event`]: the durable event log's record type.
 //! - [`api`]: the Orchestrator's client API (JSON-RPC methods).
 //! - [`link`]: the executor link messages.
+//! - [`rpc`]: JSON-RPC 2.0 framing for the client API.
 //!
 //! Wire shapes are pinned by snapshot tests in `tests/wire.rs`. A snapshot change is a
 //! protocol change: bump [`api::API_VERSION`] or [`link::LINK_PROTOCOL_VERSION`] when
@@ -15,5 +16,6 @@ pub mod domain;
 pub mod event;
 pub mod ids;
 pub mod link;
+pub mod rpc;
 
 pub use ids::*;

@@ -26,6 +26,16 @@ todo = "warn"
 [workspace.dependencies]
 # Internal crates
 console-config = { path = "crates/config" }
+console-proto = { path = "crates/proto" }
+console-store = { path = "crates/store" }
+console-queue = { path = "crates/queue" }
+console-client = { path = "crates/client" }
+console-orchestrator = { path = "crates/orchestrator" }
+console-executor = { path = "crates/executor" }
+console-cc-host = { path = "crates/cc-host" }
+console-agent = { path = "crates/agent" }
+console-acp-host = { path = "crates/acp-host" }
+console-acp-bridge = { path = "crates/acp-bridge" }
 
 # Protocols reused from M0
 agent-client-protocol = "5.5"
@@ -46,5 +56,13 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 ulid = { version = "3", features = ["serde"] }
 
+# Services
+axum = { version = "0.8", features = ["ws"] }
+futures = "0.3"
+sqlx = { version = "0.9", default-features = false, features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
+tokio-tungstenite = "0.30"
+
 # Dev
 insta = { version = "1.49", features = ["json"] }
+proptest = "1.12"
+tempfile = "3"
