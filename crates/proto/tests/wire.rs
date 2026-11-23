@@ -521,6 +521,7 @@ fn orchestrator_messages() {
         OrchestratorMsg::DecisionResponse {
             decision_id: decision(),
             option_id: "allow_once".into(),
+            answer: None,
         },
         OrchestratorMsg::McpResult {
             call_id: "c-1".into(),

@@ -30,12 +30,12 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Worker sessions (`--task`) and `/attach`
   - [x] Slash commands
 - [x] **Decide: worker permission policy** — inherit your Claude Code and Codex settings
-- [ ] **M7 Workers** (~6 days)
-  - [ ] Codex ACP spike: MCP passthrough, permission requests, cancel, auth
-  - [ ] `acp-host` in the executor: harness config, process groups, brief as the first prompt
-  - [ ] Worker MCP tools: ask, report, complete, follow-up, blocked
-  - [ ] Questions and permissions surface as decisions in the conversation
-  - [ ] Patch capture; concurrency limits (1 per workspace, 2 total)
+- [x] **M7 Workers** (~6 days)
+  - [x] Codex ACP spike: MCP passthrough, permission requests, cancel, auth
+  - [x] `acp-host` in the executor: harness config, process groups, brief as the first prompt
+  - [x] Worker MCP tools: ask, report, complete, follow-up, blocked
+  - [x] Questions and permissions surface as decisions in the conversation
+  - [x] Patch capture; concurrency limits (1 per workspace, 2 total)
 - [ ] **M8 Daily-driver hardening** (~3 days)
   - [ ] `console up`/`down`/`status` as launchd agents
   - [ ] Restart recovery end to end; `OutcomeUnknown` resolution flow

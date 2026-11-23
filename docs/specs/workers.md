@@ -6,14 +6,14 @@ Coding agents that do delegated work in a real workspace. Summary in [DESIGN.md]
 
 | Harness | Adapter | Status |
 |---|---|---|
-| Claude Code | `@agentclientprotocol/claude-agent-acp` (0.109.1 in M0) | Verified in M0 |
-| Codex | `@agentclientprotocol/codex-acp` (2.9.0 on npm; Codex CLI 0.163.0 installed) | Spike at the start of M7 |
+| Claude Code | `@agentclientprotocol/claude-agent-acp` 0.109.1 | Verified in M0 and M7 |
+| Codex | `@agentclientprotocol/codex-acp` 2.9.0 (Codex CLI 0.163.0, ChatGPT login) | Verified in M7 |
 
-- **Both speak ACP,** so the executor's worker host (`acp-host`) is harness-agnostic. A harness is a config entry: name, command, and environment.
-- **`delegate_task` takes an optional `harness`.** The default is Claude Code; you or the brief can ask for Codex.
-- **Versions are pinned and installed,** not fetched with `npx` at runtime (cold start was about 5 s in M0).
-
-**Codex spike checklist:** MCP servers passed through ACP `session/new` reach Codex; permission requests arrive as ACP requests; cancel stops the turn; how auth works (ChatGPT login or API key); how its sandbox modes map to our permission policy.
+- **Both speak ACP,** so the executor's worker host (`acp-host`) is harness-agnostic. A harness is a config entry, `executor.harnesses.<name> = [command, args...]`.
+- **`delegate_task` takes an optional `harness`.** The default is `executor.default_harness` (`claude`); you or the brief can ask for Codex.
+- **Versions are pinned and installed globally** (`npm install -g ...@<version>`), not fetched with `npx` at runtime (cold start was about 5 s in M0).
+- **Both adapters advertise MCP over HTTP** (`mcpCapabilities.http`), so the executor serves worker tools the same way for both.
+- **Process groups:** the ACP crate starts each adapter in its own process group and kills the group on shutdown or when the connection drops.
 
 ## Lifecycle
 
@@ -29,7 +29,7 @@ A brief has a title, goal, relevant context from the conversation (including inl
 
 ## Worker tools
 
-The executor hosts an MCP server for each worker and proxies calls to the Orchestrator (`McpCall`).
+The executor serves the worker tools over streamable HTTP on a local port, behind the local token; each worker's requests carry its task in an `x-console-task` header. `propose_followup` is proxied to the Orchestrator (`McpCall`); the rest are handled by the executor.
 
 | Tool | Effect |
 |---|---|
@@ -39,7 +39,9 @@ The executor hosts an MCP server for each worker and proxies calls to the Orches
 | `propose_followup(todo)` | Adds a proposed todo to the queue's inbox |
 | `mark_blocked(reason)` | Task becomes blocked with the reason |
 
-A turn that ends without `complete` or a question is treated as needing input. M0 showed a worker backgrounding a command and ending its turn early, so silence is never read as success.
+A turn that ends without `complete` or a question becomes a question to you ("The worker ended its turn without completing the task… What should it do next?"), and your answer is its next prompt. M0 showed a worker backgrounding a command and ending its turn early, so silence is never read as success.
+
+When the worker completes, the executor captures the patch against the revision at start (untracked files included, index untouched) and reports it with the summary. Steering messages (`task_message`, `worker.prompt`, `console acp --task`) are sent as their own commands and never move the task's state.
 
 ## Mediation
 

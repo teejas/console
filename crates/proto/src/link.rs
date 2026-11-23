@@ -118,6 +118,9 @@ pub enum OrchestratorMsg {
     DecisionResponse {
         decision_id: DecisionId,
         option_id: String,
+        /// The user's words, for free-text questions.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        answer: Option<String>,
     },
     McpResult {
         call_id: String,

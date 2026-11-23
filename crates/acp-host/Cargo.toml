@@ -11,3 +11,6 @@ publish = false
 workspace = true
 
 [dependencies]
+agent-client-protocol = { workspace = true, features = ["process"] }
+tokio.workspace = true
+tracing.workspace = true

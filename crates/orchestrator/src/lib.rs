@@ -11,6 +11,7 @@ pub mod queue_ops;
 pub mod server;
 pub mod task_machine;
 pub mod work;
+pub mod worker_link;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -112,6 +113,13 @@ impl App {
                 let p = api::params::<console_proto::api::TurnOverrideMethod>(p)?;
                 self.override_turn(p.turn_id, p.mode).await?;
                 api::result::<console_proto::api::TurnOverrideMethod>(console_proto::api::Empty {})
+            }
+            console_proto::api::WorkerPrompt::NAME => {
+                let p = api::params::<console_proto::api::WorkerPrompt>(p)?;
+                self.message_worker(p.task_id, &p.text)
+                    .await
+                    .map_err(|e| api::ApiError(RpcError::rejected(e)))?;
+                api::result::<console_proto::api::WorkerPrompt>(console_proto::api::Empty {})
             }
             console_proto::api::TaskPatch::NAME => {
                 let p = api::params::<console_proto::api::TaskPatch>(p)?;
@@ -217,15 +225,13 @@ impl App {
             .map(|_| ())
     }
 
-    /// Steers a running worker (arrives with workers in M7).
+    /// Steers a running worker.
     pub async fn message_worker(
         &self,
         task: console_proto::TaskId,
-        _text: &str,
+        text: &str,
     ) -> Result<String, String> {
-        Err(format!(
-            "task {task}: messaging workers isn't supported yet"
-        ))
+        worker_link::message_worker(self, task, text).await
     }
 
     /// Resolves a decision with an option or a free-text answer and routes it.
@@ -267,8 +273,8 @@ impl App {
     }
 
     /// Worker traffic from an executor (progress, decisions, MCP calls).
-    pub(crate) async fn on_worker_message(&self, _executor: ExecutorId, msg: ExecutorMsg) {
-        tracing::debug!(?msg, "worker message ignored until workers exist");
+    pub(crate) async fn on_worker_message(&self, executor: ExecutorId, msg: ExecutorMsg) {
+        worker_link::on_message(self, executor, msg).await;
     }
 
     /// A command reached a final status.
@@ -287,9 +293,10 @@ impl App {
     /// A decision was answered; route the answer to the worker.
     pub(crate) async fn on_decision_resolved(
         &self,
-        _decision: &DecisionRecord,
-        _answer: Option<&str>,
+        decision: &DecisionRecord,
+        answer: Option<&str>,
     ) {
+        worker_link::route_answer(self, decision, answer).await;
     }
 }
 

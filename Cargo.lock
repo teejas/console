@@ -660,6 +660,11 @@ dependencies = [
 [[package]]
 name = "console-acp-host"
 version = "0.1.0"
+dependencies = [
+ "agent-client-protocol",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "console-agent"
@@ -710,15 +715,19 @@ name = "console-executor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum",
  "chrono",
+ "console-acp-host",
  "console-config",
  "console-proto",
  "futures",
  "globset",
  "grep-regex",
  "grep-searcher",
+ "http",
  "ignore",
  "nix 0.32.0",
+ "rmcp",
  "serde",
  "serde_json",
  "sqlx",

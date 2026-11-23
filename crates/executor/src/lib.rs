@@ -4,6 +4,8 @@
 
 pub mod journal;
 pub mod readops;
+pub mod worker_mcp;
+pub mod workers;
 pub mod workspaces;
 
 use std::collections::HashMap;
@@ -40,6 +42,10 @@ pub struct Executor {
     out: Mutex<Option<mpsc::UnboundedSender<String>>>,
     running: Mutex<HashMap<CommandId, CancellationToken>>,
     tasks: Mutex<Vec<tokio::task::AbortHandle>>,
+    pub workers: workers::Workers,
+    mcp_url: std::sync::OnceLock<String>,
+    pending_mcp: Mutex<HashMap<String, tokio::sync::oneshot::Sender<Result<String, String>>>>,
+    next_call: std::sync::atomic::AtomicU64,
 }
 
 /// The journal file inside the data directory.
@@ -70,7 +76,59 @@ impl Executor {
             out: Mutex::new(None),
             running: Mutex::new(HashMap::new()),
             tasks: Mutex::new(Vec::new()),
+            workers: workers::Workers::default(),
+            mcp_url: std::sync::OnceLock::new(),
+            pending_mcp: Mutex::new(HashMap::new()),
+            next_call: std::sync::atomic::AtomicU64::new(1),
         }))
+    }
+
+    /// Starts the worker tool server; call once after [`Executor::open`].
+    pub async fn start_worker_tools(self: &Arc<Self>) -> std::io::Result<()> {
+        let url = worker_mcp::serve(self.clone()).await?;
+        let _ = self.mcp_url.set(url);
+        Ok(())
+    }
+
+    /// Where workers reach their tools.
+    pub fn mcp_url(&self) -> Option<String> {
+        self.mcp_url.get().cloned()
+    }
+
+    /// Asks the Orchestrator to run a worker tool call and waits for the result.
+    pub async fn mcp_call(
+        &self,
+        cid: CommandId,
+        tool: &str,
+        args: serde_json::Value,
+        timeout: Duration,
+    ) -> Result<String, String> {
+        let call_id = format!(
+            "c{}",
+            self.next_call
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        );
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        if let Ok(mut p) = self.pending_mcp.lock() {
+            p.insert(call_id.clone(), tx);
+        }
+        if !self.send(&ExecutorMsg::McpCall {
+            call_id: call_id.clone(),
+            command_id: cid,
+            tool: tool.into(),
+            args,
+        }) {
+            return Err("the Orchestrator is unreachable right now".into());
+        }
+        match tokio::time::timeout(timeout, rx).await {
+            Ok(Ok(r)) => r,
+            _ => {
+                if let Ok(mut p) = self.pending_mcp.lock() {
+                    p.remove(&call_id);
+                }
+                Err("no reply from the Orchestrator".into())
+            }
+        }
     }
 
     /// Sends a message on the current connection. Returns false when disconnected.
@@ -269,8 +327,36 @@ impl Executor {
                     this.send(&ExecutorMsg::ReadOpResult { request_id, result });
                 });
             }
-            OrchestratorMsg::DecisionResponse { .. } | OrchestratorMsg::McpResult { .. } => {
-                tracing::debug!("worker messages arrive with workers (M7)");
+            OrchestratorMsg::DecisionResponse {
+                decision_id,
+                option_id,
+                answer,
+            } => {
+                let routed = self
+                    .workers
+                    .all()
+                    .iter()
+                    .any(|w| w.answer(decision_id, &option_id, answer.clone()));
+                if !routed {
+                    tracing::warn!(decision = %decision_id, "answer for a decision no worker is waiting on");
+                }
+            }
+            OrchestratorMsg::McpResult {
+                call_id,
+                result,
+                is_error,
+            } => {
+                let tx = self
+                    .pending_mcp
+                    .lock()
+                    .ok()
+                    .and_then(|mut p| p.remove(&call_id));
+                if let Some(tx) = tx {
+                    let text = result
+                        .as_str()
+                        .map_or_else(|| result.to_string(), str::to_owned);
+                    let _ = tx.send(if is_error { Err(text) } else { Ok(text) });
+                }
             }
             OrchestratorMsg::Welcome { .. } | OrchestratorMsg::Reject { .. } => {}
         }
@@ -319,7 +405,7 @@ impl Executor {
         let this = self.clone();
         let handle = tokio::spawn(async move {
             let _ = this.journal.set_status(cid, CommandStatus::Running).await;
-            let outcome = this.execute(op, token).await;
+            let outcome = this.clone().execute(cid, op, token).await;
             if let Ok(mut running) = this.running.lock() {
                 running.remove(&cid);
             }
@@ -356,7 +442,12 @@ impl Executor {
         }
     }
 
-    async fn execute(&self, op: Op, cancel: CancellationToken) -> CommandOutcome {
+    async fn execute(
+        self: Arc<Self>,
+        cid: CommandId,
+        op: Op,
+        cancel: CancellationToken,
+    ) -> CommandOutcome {
         match op {
             Op::Exec {
                 workspace_id,
@@ -391,8 +482,28 @@ impl Executor {
                     },
                 }
             }
-            Op::StartWorker { .. } | Op::WorkerPrompt { .. } => CommandOutcome::Failed {
-                error: "workers are not supported by this executor yet".into(),
+            Op::StartWorker {
+                task_id,
+                workspace_id,
+                harness,
+                brief,
+            } => {
+                let Some(ws) = self.registry.get(workspace_id) else {
+                    return CommandOutcome::Failed {
+                        error: "unknown workspace on this executor".into(),
+                    };
+                };
+                let root = ws.root.clone();
+                workers::run(&self, cid, task_id, &root, &harness, brief, cancel).await
+            }
+            Op::WorkerPrompt { task_id, text } => match self.workers.get(task_id) {
+                Some(w) if w.prompt(text) => CommandOutcome::Succeeded {
+                    summary: Some("delivered".into()),
+                    patch: None,
+                },
+                _ => CommandOutcome::Failed {
+                    error: "that task has no running worker on this executor".into(),
+                },
             },
         }
     }
@@ -472,7 +583,7 @@ async fn exec(
     }
 }
 
-async fn capture_patch(dir: &std::path::Path, base_rev: &str) -> CommandOutcome {
+pub(crate) async fn capture_patch(dir: &std::path::Path, base_rev: &str) -> CommandOutcome {
     if base_rev.starts_with('-') {
         return CommandOutcome::Failed {
             error: format!("invalid revision {base_rev:?}"),
@@ -523,6 +634,7 @@ async fn capture_patch(dir: &std::path::Path, base_rev: &str) -> CommandOutcome 
 /// Runs the executor until interrupted.
 pub async fn run(config: Config) -> anyhow::Result<()> {
     let exec = Executor::open(config).await?;
+    exec.start_worker_tools().await?;
     tracing::info!(executor = %exec.id, workspaces = exec.registry.all().count(), "executor starting");
     exec.run_until(async {
         let _ = tokio::signal::ctrl_c().await;

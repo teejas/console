@@ -12,6 +12,10 @@ workspace = true
 
 [dependencies]
 anyhow.workspace = true
+axum.workspace = true
+console-acp-host.workspace = true
+http.workspace = true
+rmcp = { workspace = true, features = ["server", "macros", "schemars", "transport-streamable-http-server"] }
 chrono.workspace = true
 console-config.workspace = true
 console-proto.workspace = true

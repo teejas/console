@@ -57,13 +57,23 @@ enum Command {
     #[command(subcommand)]
     Todo(queue_cmd::TodoCommand),
     /// List tasks.
-    Tasks,
+    Tasks {
+        /// Include finished tasks.
+        #[arg(long)]
+        all: bool,
+    },
     /// Explain a task or turn: attempts, executor, waits, delegation decision, spend.
     Inspect { id: String },
     /// Show a task's logs.
     Logs { id: String },
-    /// Answer a pending decision.
-    Decide { id: String, option: String },
+    /// List pending decisions, or answer one: `console decide 1 allow` or `console decide 1 use Postgres`.
+    Decide {
+        /// Decision number from the list.
+        n: Option<usize>,
+        /// An option ID, or free text for a worker's question.
+        #[arg(num_args = 0..)]
+        answer: Vec<String>,
+    },
     /// Inspect configuration.
     #[command(subcommand)]
     Config(ConfigCommand),
@@ -188,7 +198,14 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             runtime()?.block_on(queue_cmd::todo(&config, cmd))?;
             ExitCode::SUCCESS
         }
-        Command::Tasks | Command::Decide { .. } => not_yet("tasks/decide", "M7"),
+        Command::Tasks { all } => {
+            runtime()?.block_on(queue_cmd::tasks(&config, all))?;
+            ExitCode::SUCCESS
+        }
+        Command::Decide { n, answer } => {
+            runtime()?.block_on(queue_cmd::decide(&config, n, &answer.join(" ")))?;
+            ExitCode::SUCCESS
+        }
         Command::Inspect { .. } | Command::Logs { .. } => not_yet("inspect/logs", "M8"),
     })
 }

@@ -157,6 +157,20 @@ impl Hub {
         )
     }
 
+    /// Dispatches an op that isn't a task attempt (for example a prompt to a running
+    /// worker). Its status never moves a task.
+    pub async fn send_untracked(&self, app: &App, eid: ExecutorId, op: Op) -> bool {
+        let Ok(mut cmd) = app
+            .store
+            .write(async |tx| tx.insert_command(eid, None, None, &op).await)
+            .await
+        else {
+            return false;
+        };
+        cmd.attempt_id = Some(console_proto::AttemptId::generate());
+        self.dispatch(&cmd)
+    }
+
     /// Asks the executor to stop the task's current command, if it is reachable.
     pub async fn cancel(&self, app: &App, task_id: TaskId) -> Result<bool, HubError> {
         let Some(cmd) = app.store.latest_command_for_task(task_id).await? else {

@@ -398,3 +398,94 @@ pub async fn ask(config: &Config, message: &str) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+/// `console tasks`: delegated work and where it stands.
+pub async fn tasks(config: &Config, all: bool) -> anyhow::Result<()> {
+    use console_proto::api::{TaskList, TaskListParams};
+    let client = connect(config).await?;
+    let tasks = client
+        .call::<TaskList>(TaskListParams { include_done: all })
+        .await?;
+    if tasks.is_empty() {
+        println!("No {}tasks.", if all { "" } else { "active " });
+    }
+    for (i, t) in tasks.iter().enumerate() {
+        let blocked = t
+            .blocked
+            .map(|b| format!(" ({})", enum_str(&b)))
+            .unwrap_or_default();
+        println!(
+            "{:>3}  {:<16} {}{blocked}  [{}]",
+            i + 1,
+            enum_str(&t.state),
+            t.title,
+            short(&t.id)
+        );
+    }
+    Ok(())
+}
+
+/// `console decide`: list open decisions, or answer one.
+pub async fn decide(config: &Config, n: Option<usize>, answer: &str) -> anyhow::Result<()> {
+    use console_proto::api::{
+        AttachParams, DecisionRespond, DecisionRespondParams, SessionAttach, SessionTarget,
+    };
+    let client = connect(config).await?;
+    let open = client
+        .call::<SessionAttach>(AttachParams {
+            target: SessionTarget::Orchestrator,
+            recent: 0,
+        })
+        .await?
+        .open_decisions;
+    let Some(n) = n else {
+        if open.is_empty() {
+            println!("Nothing is waiting on you.");
+        }
+        for (i, d) in open.iter().enumerate() {
+            let opts: Vec<&str> = d.options.iter().map(|o| o.id.as_str()).collect();
+            let how = if opts.is_empty() {
+                "free text".to_owned()
+            } else {
+                opts.join(" / ")
+            };
+            println!("{:>3}  {}  [{how}]", i + 1, d.question);
+        }
+        return Ok(());
+    };
+    let d = open
+        .get(n.wrapping_sub(1))
+        .ok_or_else(|| anyhow!("no decision {n}; run `console decide`"))?;
+    if answer.trim().is_empty() {
+        bail!("give an option or an answer: `console decide {n} <answer>`");
+    }
+    let (option_id, text) = if d.options.is_empty() {
+        ("answer".to_owned(), Some(answer.to_owned()))
+    } else {
+        let o = d
+            .options
+            .iter()
+            .find(|o| o.id.eq_ignore_ascii_case(answer) || o.label.eq_ignore_ascii_case(answer))
+            .ok_or_else(|| {
+                anyhow!(
+                    "choose one of: {}",
+                    d.options
+                        .iter()
+                        .map(|o| o.id.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            })?;
+        (o.id.clone(), None)
+    };
+    client
+        .call::<DecisionRespond>(DecisionRespondParams {
+            decision_id: d.id,
+            option_id,
+            expected_state: None,
+            answer: text,
+        })
+        .await?;
+    println!("Answered.");
+    Ok(())
+}

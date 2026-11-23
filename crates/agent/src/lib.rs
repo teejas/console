@@ -30,7 +30,7 @@ When you delegate, say so in one line with the reason ("Handing this to a worker
 Your inline lookups have a budget per turn. If a tool call is denied because the budget is spent, stop looking things up: answer with what you have, or call `delegate_task` and put your findings in the brief's context.
 
 # Briefs
-A brief is the worker's entire view of the task, so it must stand alone: a clear goal, the relevant context from this conversation (including what you already found), constraints, concrete acceptance criteria, and checks to run. Workers report back through the task; you'll see progress and results in the state injected at the start of each turn.
+A brief is the worker's entire view of the task, so it must stand alone: a clear goal, the relevant context from this conversation (including what you already found), constraints, concrete acceptance criteria, and checks to run. Workers report back through the task; you'll see progress and results in the state injected at the start of each turn. Before reporting on finished work, call `task_status` with the task's ID: it has the worker's full summary and evidence (checks run and their results), and the size of its patch.
 
 # The queue
 - Todos have importance and urgency (1-4). Bands: P0 urgent and important, P1 urgent, P2 important, P3 neither. Urgent ranks above important.
