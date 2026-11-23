@@ -14,8 +14,7 @@ use serde_json::Value;
 
 use crate::event::DecisionOption;
 use crate::ids::{
-    ArtifactId, AttemptId, AuthorityEpoch, CommandId, DecisionId, ExecutorId, TaskId, TerminalId,
-    WorkspaceId,
+    AttemptId, AuthorityEpoch, CommandId, DecisionId, ExecutorId, TaskId, TerminalId, WorkspaceId,
 };
 
 /// Bumped on any incompatible change to the link protocol.
@@ -28,6 +27,8 @@ pub enum ExecutorMsg {
     /// The first message on every connection.
     Hello {
         executor_id: ExecutorId,
+        /// Human-readable name from the executor's config.
+        name: String,
         protocol: u32,
         /// Dispatches from an epoch lower than this are rejected.
         max_epoch_seen: AuthorityEpoch,
@@ -238,8 +239,9 @@ pub enum CommandOutcome {
     Succeeded {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         summary: Option<String>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        artifacts: Vec<ArtifactId>,
+        /// A unified diff of the workspace changes, stored by the Orchestrator as an artifact.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        patch: Option<String>,
     },
     Failed {
         error: String,

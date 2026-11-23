@@ -121,7 +121,10 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             runtime()?.block_on(console_orchestrator::run(config))?;
             ExitCode::SUCCESS
         }
-        Command::Executor => not_yet("executor", "M3"),
+        Command::Executor => {
+            runtime()?.block_on(console_executor::run(config))?;
+            ExitCode::SUCCESS
+        }
         Command::Acp { .. } => not_yet("acp", "M6"),
         Command::Hook(_) => not_yet("hook", "M5"),
         Command::Up | Command::Down | Command::Status => not_yet("up/down/status", "M8"),

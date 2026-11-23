@@ -23,6 +23,7 @@ pub fn router(app: Arc<App>) -> Router {
     Router::new()
         .route("/healthz", get(|| async { "ok" }))
         .route("/client", get(client_ws))
+        .route("/executor", get(crate::hub::executor_ws))
         .with_state(app)
 }
 

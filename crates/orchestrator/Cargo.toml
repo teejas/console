@@ -26,5 +26,6 @@ tracing.workspace = true
 
 [dev-dependencies]
 console-client.workspace = true
+console-executor.workspace = true
 proptest.workspace = true
 tempfile.workspace = true

@@ -6,6 +6,7 @@ expression: msgs
   {
     "type": "hello",
     "executor_id": "exe_01KANAR9G00000000000000008",
+    "name": "laptop",
     "protocol": 1,
     "max_epoch_seen": 1,
     "capabilities": [
@@ -104,9 +105,7 @@ expression: msgs
     "outcome": {
       "result": "succeeded",
       "summary": "51 tests pass",
-      "artifacts": [
-        "art_01KANAR9G0000000000000000A"
-      ]
+      "patch": "diff --git a/x b/x"
     }
   },
   {

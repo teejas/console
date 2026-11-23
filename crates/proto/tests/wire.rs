@@ -332,6 +332,7 @@ fn executor_messages() {
     let msgs = vec![
         ExecutorMsg::Hello {
             executor_id: executor(),
+            name: "laptop".into(),
             protocol: LINK_PROTOCOL_VERSION,
             max_epoch_seen: AuthorityEpoch(1),
             capabilities: vec![
@@ -397,7 +398,7 @@ fn executor_messages() {
             command_id: command(),
             outcome: CommandOutcome::Succeeded {
                 summary: Some("51 tests pass".into()),
-                artifacts: vec![ArtifactId::from_ulid(ulid(10))],
+                patch: Some("diff --git a/x b/x".into()),
             },
         },
         ExecutorMsg::Result {

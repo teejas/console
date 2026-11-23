@@ -4,6 +4,7 @@
 
 pub mod api;
 pub mod engine;
+pub mod hub;
 pub mod server;
 pub mod task_machine;
 
@@ -11,10 +12,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use console_config::Config;
-use console_proto::SessionId;
 use console_proto::api::TodoView;
+use console_proto::link::{CommandStatus, ExecutorMsg};
 use console_proto::rpc::RpcError;
-use console_store::{DecisionRecord, Store, TaskRecord};
+use console_proto::{ExecutorId, SessionId};
+use console_store::{CommandRecord, DecisionRecord, Store, TaskRecord};
 use serde_json::Value;
 use tokio::net::TcpListener;
 
@@ -27,6 +29,7 @@ pub struct App {
     pub config: Config,
     pub token: String,
     pub orchestrator_session: SessionId,
+    pub hub: hub::Hub,
 }
 
 impl App {
@@ -41,6 +44,7 @@ impl App {
             config,
             token,
             orchestrator_session,
+            hub: hub::Hub::default(),
         }))
     }
 
@@ -63,7 +67,20 @@ impl App {
     }
 
     /// A cancel was recorded; tell the executor running the task.
-    pub(crate) async fn on_cancel_requested(&self, _task: &TaskRecord) {}
+    pub(crate) async fn on_cancel_requested(&self, task: &TaskRecord) {
+        if let Err(e) = self.hub.cancel(self, task.id).await {
+            tracing::warn!(task = %task.id, error = %e, "could not send cancel");
+        }
+    }
+
+    /// Worker traffic from an executor (progress, decisions, MCP calls).
+    pub(crate) async fn on_worker_message(&self, _executor: ExecutorId, msg: ExecutorMsg) {
+        tracing::debug!(?msg, "worker message ignored until workers exist");
+    }
+
+    /// A command reached a final status.
+    pub(crate) async fn after_command_settled(&self, _cmd: &CommandRecord, _status: CommandStatus) {
+    }
 
     /// A decision was answered; route the answer to the worker.
     pub(crate) async fn on_decision_resolved(

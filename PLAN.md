@@ -9,11 +9,11 @@ In priority order: work from the top. Design is in [DESIGN.md](DESIGN.md).
   - [x] Event log with the outbox rule and cursor replay
   - [x] Task state machine with compare-and-set transitions and property tests
   - [x] Client API over WebSocket: `session.attach`, `events.subscribe`, `task.*`, `decision.respond`
-- [ ] **M3 Local executor** (~4 days)
-  - [ ] Link handshake with a local token; workspace registry
-  - [ ] Command journal, `Duplicate` on redelivery, reconcile on reconnect
-  - [ ] Read ops: bounded, with the `run_readonly` allowlist
-  - [ ] Test: kill the executor mid-command → `OutcomeUnknown`, never re-run
+- [x] **M3 Local executor** (~4 days)
+  - [x] Link handshake with a local token; workspace registry
+  - [x] Command journal, `Duplicate` on redelivery, reconcile on reconnect
+  - [x] Read ops: bounded, with the `run_readonly` allowlist
+  - [x] Test: kill the executor mid-command → `OutcomeUnknown`, never re-run
 - [ ] **M4 Queue** (~3 days)
   - [ ] Bands, in-band score, manual rank, `why` (property tests)
   - [ ] Proposals for fields you own; `expected_version` on edits
